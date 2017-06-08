@@ -66,7 +66,7 @@ public:
 
 	ct::Size szOut() const;
 
-	void init(const ct::Size& _szA0, int _channels, int stride, int _K, ct::Size& _szW, bool use_pool = true, bool use_transpose = true);
+	void init(const ct::Size& _szA0, int _channels, int stride, int _K, const ct::Size& _szW, bool use_pool = true, bool use_transpose = true);
 
 	void forward(const std::vector< gpumat::GpuMat >* _pX, gpumat::etypefunction func);
 

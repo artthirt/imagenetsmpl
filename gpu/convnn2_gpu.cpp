@@ -131,7 +131,8 @@ ct::Size convnn_gpu::szOut() const
 		return szA1;
 }
 
-void convnn_gpu::init(const ct::Size &_szA0, int _channels, int stride, int _K, ct::Size &_szW, bool use_pool, bool use_transpose)
+void convnn_gpu::init(const ct::Size &_szA0, int _channels, int stride, int _K,
+					  const ct::Size &_szW, bool use_pool, bool use_transpose)
 {
 	szW = _szW;
 	K = _K;
