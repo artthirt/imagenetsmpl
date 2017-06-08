@@ -18,11 +18,11 @@ public:
 	void init();
 	void doPass(int pass, int batch);
 
-	void forward(const std::vector< ct::Matf >& X, ct::Matf& yOut);
-	void backward(const ct::Matf& Delta);
-	ct::Matf predict(ct::Matf &y);
+	void forward(const std::vector< gpumat::GpuMat >& X, gpumat::GpuMat& yOut);
+	void backward(const gpumat::GpuMat& Delta);
+	ct::Matf predict(gpumat::GpuMat &y);
 	ct::Matf predict(const QString& name, bool show_debug = false);
-	float loss(const ct::Matf &y, ct::Matf &y_);
+	float loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_);
 
 	void save_net(const QString& name);
 	void load_net(const QString& name);

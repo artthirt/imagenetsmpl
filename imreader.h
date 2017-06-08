@@ -5,6 +5,14 @@
 #include <vector>
 #include <QString>
 
+/**
+ * @brief check
+ * @param i1
+ * @param i2
+ * @return
+ */
+double check(const ct::Matf& i1, const ct::Matf& i2);
+
 class ImReader
 {
 public:

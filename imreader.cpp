@@ -8,6 +8,26 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 
+///////////////////////
+
+double check(const ct::Matf& i1, const ct::Matf& i2)
+{
+	if(i1.empty() || i1.rows != i2.rows || i1.cols != 1 || i2.cols != 1)
+		return -1.;
+
+	int idx = 0;
+	for(int i = 0; i < i1.rows; ++i){
+		if(i1.ptr()[i] == i2.ptr()[i])
+			idx++;
+	}
+	double pred = (double)idx / i1.rows;
+
+	return pred;
+}
+
+////////////////////////
+////////////////////////
+
 //const QString ImNetPath("../../../data/imagenet/");
 
 ImReader::ImReader()

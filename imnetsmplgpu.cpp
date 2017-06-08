@@ -41,22 +41,75 @@ void ImNetSmplGpu::init()
 	m_init = true;
 }
 
+void get_gX(const std::vector< ct::Matf>& X, std::vector< gpumat::GpuMat >& gX)
+{
+	if(gX.size() != X.size())
+		gX.resize(X.size());
+	for(size_t i = 0; i < X.size(); ++i){
+		gpumat::convert_to_gpu(X[i], gX[i]);
+	}
+}
+
 void ImNetSmplGpu::doPass(int pass, int batch)
 {
+	if(!m_reader)
+		return;
 
+	if(!m_init)
+		init();
+
+	std::vector< gpumat::GpuMat > gX;
+	gpumat::GpuMat gy, gy_, gD;
+
+	for(int i = 0; i < pass; ++i){
+		std::vector< ct::Matf > X;
+		ct::Matf y, y_;
+
+		m_reader->get_batch(X, y, batch);
+
+		get_gX(X, gX);
+		gpumat::convert_to_gpu(y, gy);
+
+		qDebug("--> pass %d", i);
+		forward(gX, gy_);
+
+		gpumat::subIndOne(gy_, gy, gD);
+
+		printf("--> backward\r");
+		backward(gD);
+
+		if((i % 5) == 0){
+			std::vector< ct::Matf > X;
+			ct::Matf y, y_, p;
+			m_reader->get_batch(X, y, batch * 3);
+
+			get_gX(X, gX);
+			gpumat::convert_to_gpu(y, gy);
+
+			forward(gX, gy_);
+
+			float l = loss(gy, gy_);
+			p = predict(gy_);
+			double pr = check(y, p);
+			qDebug("loss=%f;\tpred=%f", l, pr);
+		}
+		if((i % 20) == 0){
+			save_net("model.bin");
+		}
+	}
 }
 
-void ImNetSmplGpu::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut)
+void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat &yOut)
 {
 
 }
 
-void ImNetSmplGpu::backward(const ct::Matf &Delta)
+void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 {
 
 }
 
-ct::Matf ImNetSmplGpu::predict(ct::Matf &y)
+ct::Matf ImNetSmplGpu::predict(gpumat::GpuMat &y)
 {
 	return ct::Matf();
 }
@@ -66,7 +119,7 @@ ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
 	return ct::Matf();
 }
 
-float ImNetSmplGpu::loss(const ct::Matf &y, ct::Matf &y_)
+float ImNetSmplGpu::loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_)
 {
 	return -1;
 }

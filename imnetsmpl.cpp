@@ -51,21 +51,6 @@ void ImNetSmpl::init()
 	m_init = true;
 }
 
-double check(const ct::Matf& i1, const ct::Matf& i2)
-{
-	if(i1.empty() || i1.rows != i2.rows || i1.cols != 1 || i2.cols != 1)
-		return -1.;
-
-	int idx = 0;
-	for(int i = 0; i < i1.rows; ++i){
-		if(i1.ptr()[i] == i2.ptr()[i])
-			idx++;
-	}
-	double pred = (double)idx / i1.rows;
-
-	return pred;
-}
-
 void ImNetSmpl::doPass(int pass, int batch)
 {
 	if(!m_reader)
