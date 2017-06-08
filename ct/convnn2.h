@@ -566,7 +566,7 @@ public:
 		std::vector< ct::Mat_<T> > dSub;
 		dSub.resize(D.size());
 
-		printf("1\n");
+		//printf("1\n");
 		if(m_use_pool){
 			for(size_t i = 0; i < D.size(); ++i){
 				ct::Mat_<T> Di = D[i];
@@ -578,7 +578,7 @@ public:
 			backcnv(D, dSub);
 		}
 
-		printf("2\n");
+		//printf("2\n");
 		vgW.resize(D.size());
 		vgB.resize(D.size());
 //#pragma omp parallel for
@@ -592,7 +592,7 @@ public:
 			//Wi *= (1.f/dSubi.total());
 			//vgBi.swap_dims();
 		}
-		printf("3\n");
+		//printf("3\n");
 		gW.setSize(W.size());
 		gW.fill(0);
 		gB.setSize(B.size());
@@ -604,12 +604,12 @@ public:
 		gW *= (T)1./(D.size());
 		gB *= (T)1./(D.size());
 
-		printf("4\n");
+		//printf("4\n");
 		if(m_Lambda > 0){
 			gW += W * (m_Lambda / K);
 		}
 
-		printf("5\n");
+		//printf("5\n");
 		if(!last_level){
 			Dlt.resize(D.size());
 
@@ -625,7 +625,7 @@ public:
 			}
 		}
 
-		printf("6\n");
+		//printf("6\n");
 		std::vector< ct::Mat_<T>> vgW, vgB, vW, vB;
 		vgW.push_back(gW);
 		vW.push_back(W);
@@ -635,7 +635,7 @@ public:
 		m_optim.pass(vgW, vgB, vW, vB);
 		W = vW[0]; B = vB[0];
 
-		printf("7\n");
+		//printf("7\n");
 	}
 
 	void write(std::fstream& fs){
