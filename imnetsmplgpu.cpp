@@ -118,7 +118,26 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 
 void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 {
+	if(m_mlp.empty() || m_mlp[1].A1.empty())
+		return;
 
+	m_mlp[1].backward(Delta);
+	m_mlp[0].backward(m_mlp[1].DltA0);
+
+	gpumat::conv2::mat2vec(m_mlp[0].DltA0, m_conv[4].szK, m_deltas);
+
+	printf("-cnv4        \r");
+	m_conv[4].backward(m_deltas);
+	printf("-cnv3        \r");
+	m_conv[3].backward(m_conv[4].Dlt);
+	printf("-cnv2        \r");
+	m_conv[2].backward(m_conv[3].Dlt);
+	printf("-cnv1        \r");
+	m_conv[1].backward(m_conv[2].Dlt);
+	printf("-cnv0        \r\n");
+	m_conv[0].backward(m_conv[1].Dlt, true);
+
+	m_optim.pass(m_mlp);
 }
 
 ct::Matf ImNetSmplGpu::predict(gpumat::GpuMat &y)

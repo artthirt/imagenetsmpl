@@ -35,6 +35,7 @@ private:
 	int m_classes;
 	gpumat::GpuMat m_A1;
 	gpumat::MlpOptim m_optim;
+	std::vector< gpumat::GpuMat > m_deltas;
 
 	bool m_init;
 
