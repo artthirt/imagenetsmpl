@@ -69,24 +69,26 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 
 	for(int i = 0; i < pass; ++i){
 		std::vector< ct::Matf > X;
-		ct::Matf y, y_;
+		ct::Matf y;
 
 		m_reader->get_batch(X, y, batch);
 
 		get_gX(X, gX);
 		gpumat::convert_to_gpu(y, gy);
 
-		qDebug("--> pass %d", i);
+//		qDebug("--> pass %d", i);
 		forward(gX, &gy_);
+
+//		gpumat::save_gmat(*gy_, "tmp1.txt");
 
 		gpumat::subIndOne(*gy_, gy, gD);
 
-		printf("--> backward\r");
+//		printf("--> backward\r");
 		backward(gD);
 
 		if((i % 5) == 0){
 			std::vector< ct::Matf > X;
-			ct::Matf y, y_, p;
+			ct::Matf y, p;
 
 			int idx = 0;
 			double ls = 0, pr = 0;
@@ -95,6 +97,8 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 
 				get_gX(X, gX);
 				gpumat::convert_to_gpu(y, gy);
+//				gpumat::save_gmat(gy, "tmp1.txt");
+//				ct::save_mat(y, "tmp2.txt");
 
 				forward(gX, &gy_);
 
@@ -103,7 +107,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 				pr += check(y, p);
 			}
 			if(!idx)idx = 1;
-			qDebug("loss=%f;\tpred=%f", ls / idx, pr / idx);
+			qDebug("pass %d: loss=%f;\tpred=%f", i, ls / idx, pr / idx);
 		}
 		if((i % 20) == 0){
 			save_net("model.bin");
@@ -138,15 +142,15 @@ void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 
 	gpumat::conv2::mat2vec(m_mlp[0].DltA0, m_conv[4].szK, m_deltas);
 
-	printf("-cnv4        \r");
+//	printf("-cnv4        \r");
 	m_conv[4].backward(m_deltas);
-	printf("-cnv3        \r");
+//	printf("-cnv3        \r");
 	m_conv[3].backward(m_conv[4].Dlt);
-	printf("-cnv2        \r");
+//	printf("-cnv2        \r");
 	m_conv[2].backward(m_conv[3].Dlt);
-	printf("-cnv1        \r");
+//	printf("-cnv1        \r");
 	m_conv[1].backward(m_conv[2].Dlt);
-	printf("-cnv0        \r\n");
+//	printf("-cnv0        \r\n");
 	m_conv[0].backward(m_conv[1].Dlt, true);
 
 	m_optim.pass(m_mlp);
@@ -156,6 +160,8 @@ ct::Matf ImNetSmplGpu::predict(gpumat::GpuMat &gy)
 {
 	ct::Matf res, y;
 	gpumat::convert_to_mat(gy, y);
+
+//	gpumat::save_gmat(gy, "tmp.txt");
 
 	res.setSize(y.rows, 1);
 

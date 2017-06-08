@@ -136,6 +136,8 @@ ct::Matf ImNetSmpl::predict(ct::Matf &y)
 {
 	ct::Matf res;
 
+	ct::save_mat(y, "tmp.txt");
+
 	res.setSize(y.rows, 1);
 
 	for(int i = 0; i < y.rows; ++i){
