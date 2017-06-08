@@ -100,7 +100,7 @@ void ImNetSmpl::doPass(int pass, int batch)
 			double pr = check(y, p);
 			qDebug("loss=%f;\tpred=%f", l, pr);
 		}
-		if((i % 100) == 0){
+		if((i % 20) == 0){
 			save_net("model.bin");
 		}
 	}
