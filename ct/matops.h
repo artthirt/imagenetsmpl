@@ -18,10 +18,10 @@ inline Mat_<T> operator* (const Mat_<T>& m1, const Mat_<T>& m2)
 	T* val1 = &(*m1.val)[0];
 	T* val2 = &(*m2.val)[0];
 
-//#pragma omp parallel for
+#pragma omp parallel for
 	for(int i = 0; i < m1.rows; i++){
 
-#pragma omp parallel for
+//#pragma omp parallel for
 		for(int k = 0; k < m2.cols; k++){
 			T s = 0;
 			for(int j = 0; j < m1.cols; j++){
@@ -1190,10 +1190,10 @@ void matmulT1(const Mat_<T>& At, const Mat_<T>& B, Mat_<T>& C)
 	T* val1 = &(*At.val)[0];
 	T* val2 = &(*B.val)[0];
 
-//#pragma omp parallel for
+#pragma omp parallel for
 	for(int i = 0; i < At.cols; i++){
 
-#pragma omp parallel for
+//#pragma omp parallel for
 		for(int k = 0; k < B.cols; k++){
 			T s = 0;
 #ifdef __GNUC__
@@ -1229,10 +1229,10 @@ void matmulT2(const Mat_<T>& A, const Mat_<T>& Bt, Mat_<T>& C)
 	T* val1 = &(*A.val)[0];
 	T* val2 = &(*Bt.val)[0];
 
-//#pragma omp parallel for
+#pragma omp parallel for
 	for(int i = 0; i < A.rows; i++){
 
-#pragma omp parallel for
+//#pragma omp parallel for
 		for(int k = 0; k < Bt.rows; k++){
 			T s = 0;
 #ifdef __GNUC__

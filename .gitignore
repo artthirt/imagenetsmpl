@@ -4,4 +4,13 @@ build*
 *.vcproj
 *.xml
 *.user*
-
+debug*
+release*
+x64
+tmp
+.vs
+*.vcxproj*
+*.qmake*
+My*
+*.db*
+*.ipgset

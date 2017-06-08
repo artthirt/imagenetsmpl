@@ -581,7 +581,7 @@ public:
 		printf("2\n");
 		vgW.resize(D.size());
 		vgB.resize(D.size());
-#pragma omp parallel for
+//#pragma omp parallel for
 		for(int i = 0; i < D.size(); ++i){
 			ct::Mat_<T>& Xci = Xc[i];
 			ct::Mat_<T>& dSubi = dSub[i];

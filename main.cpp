@@ -20,9 +20,16 @@ int main(int argc, char *argv[])
 {
 	std::map<std::string, std::string> res = parseArgs(argc, argv);
 
+	if(res.empty()){
+		printf("Usage: prog -f Path/To/ImageNet/Folder");
+		return 1;
+	}
+
 	QCoreApplication a(argc, argv);
 
 	ImReader ir(QString(res["imnet"].c_str()));
+	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
+
 	ImNetSmpl imnetSmpl;
 
 //	std::vector< ct::Matf > X;
