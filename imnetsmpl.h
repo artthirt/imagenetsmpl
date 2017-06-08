@@ -19,6 +19,7 @@ public:
 	void forward(const std::vector< ct::Matf >& X, ct::Matf& yOut);
 	void backward(const ct::Matf& Delta);
 	ct::Matf predict(ct::Matf &y);
+	ct::Matf predict(const QString& name, bool show_debug = false);
 	float loss(const ct::Matf &y, ct::Matf &y_);
 
 	void save_net(const QString& name);

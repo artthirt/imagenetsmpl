@@ -1,4 +1,5 @@
 #include <QCoreApplication>
+#include <QDebug>
 
 #include "imnetsmpl.h"
 #include "imreader.h"
@@ -20,6 +21,9 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-load" && i < argc){
 			res["load"] = argv[i + 1];
 		}
+		if(str == "-image" && i < argc){
+			res["image"] = argv[i + 1];
+		}
 	}
 	return res;
 }
@@ -29,7 +33,10 @@ int main(int argc, char *argv[])
 	std::map<std::string, std::string> res = parseArgs(argc, argv);
 
 	if(res.empty()){
-		printf("Usage: prog -f Path/To/ImageNet/Folder");
+		printf("Usage: app [OPTIONS]\n"
+			   "-f Path/To/ImageNet/Folder \n"
+			   "-load path/to/model \n"
+			   "-image path/to/image \n");
 		return 1;
 	}
 
@@ -40,13 +47,26 @@ int main(int argc, char *argv[])
 
 	ImNetSmpl imnetSmpl;
 
+	imnetSmpl.setReader(&ir);
+
 	if(contain(res, "load")){
 		imnetSmpl.load_net(res["load"].c_str());
 	}
+
+	if(contain(res, "image")){
+		imnetSmpl.predict(res["image"].c_str(), true);
+	}
+
+	printf("1\n");
+
+	if(!contain(res, "imnet") || res["imnet"].empty()){
+		printf("path to imagenet not specified. exit\n");
+		return 1;
+	}
+
+	printf("2\n");
 //	std::vector< ct::Matf > X;
 //	ct::Matf y;
-
-	imnetSmpl.setReader(&ir);
 
 	imnetSmpl.doPass(1000, 10);
 

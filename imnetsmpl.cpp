@@ -1,6 +1,8 @@
 #include "imnetsmpl.h"
 
 #include <QDebug>
+#include <QFile>
+#include <QDir>
 
 #include "nn.h"
 #include "convnn2.h"
@@ -157,6 +159,27 @@ ct::Matf ImNetSmpl::predict(ct::Matf &y)
 	return res;
 }
 
+ct::Matf ImNetSmpl::predict(const QString &name, bool show_debug)
+{
+	QString n = QDir::fromNativeSeparators(name);
+	qDebug() << n;
+
+	if(!QFile::exists(n) || !m_reader)
+		return ct::Matf();
+
+	ct::Matf Xi = m_reader->get_image(n.toStdString()), y;
+	std::vector< ct::Matf> X;
+	X.push_back(Xi);
+	forward(X, y);
+
+	if(show_debug){
+		int cls = y.argmax(0, 1);
+		printf("--> predicted class %d\n", cls);
+	}
+
+	return y;
+}
+
 float ImNetSmpl::loss(const ct::Matf &y, ct::Matf &y_)
 {
 	ct::Matf r = ct::subIndOne(y_, y);
@@ -168,11 +191,13 @@ float ImNetSmpl::loss(const ct::Matf &y, ct::Matf &y_)
 
 void ImNetSmpl::save_net(const QString &name)
 {
+	QString n = QDir::fromNativeSeparators(name);
+
 	std::fstream fs;
-	fs.open(name.toStdString(), std::ios_base::out | std::ios_base::binary);
+	fs.open(n.toStdString(), std::ios_base::out | std::ios_base::binary);
 
 	if(!fs.is_open()){
-		qDebug("File %s not open", name.toLatin1().data());
+		qDebug("File %s not open", n.toLatin1().data());
 		return;
 	}
 
@@ -193,11 +218,13 @@ void ImNetSmpl::save_net(const QString &name)
 
 void ImNetSmpl::load_net(const QString &name)
 {
+	QString n = QDir::fromNativeSeparators(name);
+
 	std::fstream fs;
-	fs.open(name.toStdString(), std::ios_base::in | std::ios_base::binary);
+	fs.open(n.toStdString(), std::ios_base::in | std::ios_base::binary);
 
 	if(!fs.is_open()){
-		qDebug("File %s not open", name.toLatin1().data());
+		qDebug("File %s not open", n.toLatin1().data());
 		return;
 	}
 
