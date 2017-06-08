@@ -1,0 +1,7 @@
+build*
+*.pro*
+*.sln
+*.vcproj
+*.xml
+*.user*
+
