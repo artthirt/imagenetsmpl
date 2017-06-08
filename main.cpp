@@ -2,6 +2,7 @@
 #include <QDebug>
 
 #include "imnetsmpl.h"
+#include "imnetsmplgpu.h"
 #include "imreader.h"
 #include <map>
 
@@ -24,6 +25,9 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-image" && i < argc){
 			res["image"] = argv[i + 1];
 		}
+		if(str == "-gpu"){
+			res["gpu"] = "1";
+		}
 	}
 	return res;
 }
@@ -36,7 +40,8 @@ int main(int argc, char *argv[])
 		printf("Usage: app [OPTIONS]\n"
 			   "-f Path/To/ImageNet/Folder \n"
 			   "-load path/to/model \n"
-			   "-image path/to/image \n");
+			   "-image path/to/image \n"
+			   "-gpu");
 		return 1;
 	}
 
@@ -45,30 +50,49 @@ int main(int argc, char *argv[])
 	ImReader ir(QString(res["imnet"].c_str()));
 	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
 
-	ImNetSmpl imnetSmpl;
 
-	imnetSmpl.setReader(&ir);
+	if(contain(res, "gpu")){
+		ImNetSmplGpu imnetSmpl;
+		imnetSmpl.setReader(&ir);
 
-	if(contain(res, "load")){
-		imnetSmpl.load_net(res["load"].c_str());
-	}
+		if(contain(res, "load")){
+			imnetSmpl.load_net(res["load"].c_str());
+		}
 
-	if(contain(res, "image")){
-		imnetSmpl.predict(res["image"].c_str(), true);
-	}
+		if(contain(res, "image")){
+			imnetSmpl.predict(res["image"].c_str(), true);
+		}
 
-	printf("1\n");
+		if(!contain(res, "imnet") || res["imnet"].empty()){
+			printf("path to imagenet not specified. exit\n");
+			return 1;
+		}
 
-	if(!contain(res, "imnet") || res["imnet"].empty()){
-		printf("path to imagenet not specified. exit\n");
-		return 1;
-	}
+		imnetSmpl.doPass(1000, 10);
+	}else{
+		ImNetSmpl imnetSmpl;
 
-	printf("2\n");
+		imnetSmpl.setReader(&ir);
+
+		if(contain(res, "load")){
+			imnetSmpl.load_net(res["load"].c_str());
+		}
+
+		if(contain(res, "image")){
+			imnetSmpl.predict(res["image"].c_str(), true);
+		}
+
+
+		if(!contain(res, "imnet") || res["imnet"].empty()){
+			printf("path to imagenet not specified. exit\n");
+			return 1;
+		}
+
 //	std::vector< ct::Matf > X;
 //	ct::Matf y;
 
-	imnetSmpl.doPass(1000, 10);
+		imnetSmpl.doPass(1000, 10);
+	}
 
 //	ir.get_batch(X, y, 10);
 

@@ -13,11 +13,13 @@ SOURCES += main.cpp \
     imnetsmpl.cpp \
     imreader.cpp \
    # qt_work_mat.cpp
+    imnetsmplgpu.cpp
 
 HEADERS += \
     imnetsmpl.h \
     imreader.h \
     #qt_work_mat.h
+    imnetsmplgpu.h
 
 CONFIG(debug, debug|release){
     TMP = debug
@@ -54,7 +56,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 include(ct/ct.pri)
-#include(gpu/gpu.pri)
+include(gpu/gpu.pri)
 
 UI_DIR += tmp/$$TMP/ui
 OBJECTS_DIR += tmp/$$TMP/obj
