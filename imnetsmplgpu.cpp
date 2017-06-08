@@ -1,8 +1,14 @@
 #include "imnetsmplgpu.h"
 
+#include <QDir>
+#include <QFile>
+#include <QDebug>
+
 ImNetSmplGpu::ImNetSmplGpu()
 {
 	m_init = false;
+	m_check_count = 50;
+	m_classes = 200;
 }
 
 void ImNetSmplGpu::setReader(ImReader *ir)
@@ -71,7 +77,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 		gpumat::convert_to_gpu(y, gy);
 
 		qDebug("--> pass %d", i);
-		forward(gX, gy_);
+		forward(gX, &gy_);
 
 		gpumat::subIndOne(*gy_, gy, gD);
 
@@ -81,17 +87,23 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 		if((i % 5) == 0){
 			std::vector< ct::Matf > X;
 			ct::Matf y, y_, p;
-			m_reader->get_batch(X, y, batch * 3);
 
-			get_gX(X, gX);
-			gpumat::convert_to_gpu(y, gy);
+			int idx = 0;
+			double ls = 0, pr = 0;
+			for(int i = 0; i < m_check_count; i += batch, idx++){
+				m_reader->get_batch(X, y, batch);
 
-			forward(gX, gy_);
+				get_gX(X, gX);
+				gpumat::convert_to_gpu(y, gy);
 
-			float l = loss(gy, *gy_);
-			p = predict(*gy_);
-			double pr = check(y, p);
-			qDebug("loss=%f;\tpred=%f", l, pr);
+				forward(gX, &gy_);
+
+				ls += loss(gy, *gy_);
+				p = predict(*gy_);
+				pr += check(y, p);
+			}
+			if(!idx)idx = 1;
+			qDebug("loss=%f;\tpred=%f", ls / idx, pr / idx);
 		}
 		if((i % 20) == 0){
 			save_net("model.bin");
@@ -99,7 +111,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 	}
 }
 
-void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat *yOut)
+void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat **pyOut)
 {
 	m_conv[0].forward(&X, gpumat::RELU);
 	m_conv[1].forward(&m_conv[0].XOut(), gpumat::RELU);
@@ -112,7 +124,7 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 	m_mlp[0].forward(&m_A1);
 	m_mlp[1].forward(&m_mlp[0].A1, gpumat::SOFTMAX);
 
-	yOut = &m_mlp[1].A1;
+	*pyOut = &m_mlp[1].A1;
 
 }
 
@@ -140,27 +152,121 @@ void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 	m_optim.pass(m_mlp);
 }
 
-ct::Matf ImNetSmplGpu::predict(gpumat::GpuMat &y)
+ct::Matf ImNetSmplGpu::predict(gpumat::GpuMat &gy)
 {
-	return ct::Matf();
+	ct::Matf res, y;
+	gpumat::convert_to_mat(gy, y);
+
+	res.setSize(y.rows, 1);
+
+	for(int i = 0; i < y.rows; ++i){
+		res.ptr()[i] = y.argmax(i, 1);
+	}
+	return res;
 }
 
 ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
 {
-	return ct::Matf();
+	QString n = QDir::fromNativeSeparators(name);
+	qDebug() << n;
+
+	if(!QFile::exists(n) || !m_reader)
+		return ct::Matf();
+
+	ct::Matf Xi = m_reader->get_image(n.toStdString()), y;
+	std::vector< ct::Matf> X;
+	X.push_back(Xi);
+
+	std::vector< gpumat::GpuMat > gX;
+	gpumat::GpuMat gy, *gy_, gD;
+
+	get_gX(X, gX);
+
+	forward(gX, &gy_);
+	gpumat::convert_to_mat(*gy_, y);
+
+	if(show_debug){
+		int cls = y.argmax(0, 1);
+		printf("--> predicted class %d\n", cls);
+	}
+
+	return y;
 }
 
 float ImNetSmplGpu::loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_)
 {
-	return -1;
+	gpumat::GpuMat gr;
+	gpumat::subIndOne(y_, y, gr);
+	gpumat::elemwiseSqr(gr, gr);
+	ct::Matf r;
+
+	gpumat::convert_to_mat(gr, r);
+
+	float f = r.sum() / r.rows;
+
+	return f;
 }
 
 void ImNetSmplGpu::save_net(const QString &name)
 {
+	QString n = QDir::fromNativeSeparators(name);
+
+	std::fstream fs;
+	fs.open(n.toStdString(), std::ios_base::out | std::ios_base::binary);
+
+	if(!fs.is_open()){
+		qDebug("File %s not open", n.toLatin1().data());
+		return;
+	}
+
+//	write_vector(fs, m_cnvlayers);
+//	write_vector(fs, m_layers);
+
+//	fs.write((char*)&m_szA0, sizeof(m_szA0));
+
+	for(size_t i = 0; i < m_conv.size(); ++i){
+		gpumat::conv2::convnn_gpu &cnv = m_conv[i];
+		cnv.write(fs);
+	}
+
+	for(size_t i = 0; i < m_mlp.size(); ++i){
+		m_mlp[i].write(fs);
+	}
+
+	printf("model saved.\n");
 
 }
 
 void ImNetSmplGpu::load_net(const QString &name)
 {
+	QString n = QDir::fromNativeSeparators(name);
+
+	std::fstream fs;
+	fs.open(n.toStdString(), std::ios_base::in | std::ios_base::binary);
+
+	if(!fs.is_open()){
+		qDebug("File %s not open", n.toLatin1().data());
+		return;
+	}
+
+//	read_vector(fs, m_cnvlayers);
+//	read_vector(fs, m_layers);
+
+//	fs.read((char*)&m_szA0, sizeof(m_szA0));
+
+//	setConvLayers(m_cnvlayers, m_szA0);
+
+	init();
+
+	for(size_t i = 0; i < m_conv.size(); ++i){
+		gpumat::conv2::convnn_gpu &cnv = m_conv[i];
+		cnv.read(fs);
+	}
+
+	for(size_t i = 0; i < m_mlp.size(); ++i){
+		m_mlp[i].read(fs);
+	}
+
+	printf("model loaded.\n");
 
 }

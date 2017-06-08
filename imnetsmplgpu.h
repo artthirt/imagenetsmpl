@@ -18,7 +18,7 @@ public:
 	void init();
 	void doPass(int pass, int batch);
 
-	void forward(const std::vector< gpumat::GpuMat >& X, gpumat::GpuMat *yOut);
+	void forward(const std::vector< gpumat::GpuMat >& X, gpumat::GpuMat **pyOut);
 	void backward(const gpumat::GpuMat& Delta);
 	ct::Matf predict(gpumat::GpuMat &y);
 	ct::Matf predict(const QString& name, bool show_debug = false);
@@ -36,6 +36,8 @@ private:
 	gpumat::GpuMat m_A1;
 	gpumat::MlpOptim m_optim;
 	std::vector< gpumat::GpuMat > m_deltas;
+
+	int m_check_count;
 
 	bool m_init;
 
