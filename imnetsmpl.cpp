@@ -91,7 +91,7 @@ void ImNetSmpl::doPass(int pass, int batch)
 		if((i % 5) == 0){
 			std::vector< ct::Matf > X;
 			ct::Matf y, y_, p;
-			m_reader->get_batch(X, y, batch * 2);
+			m_reader->get_batch(X, y, batch * 3);
 
 			forward(X, y_);
 
@@ -214,6 +214,8 @@ void ImNetSmpl::save_net(const QString &name)
 	for(size_t i = 0; i < m_mlp.size(); ++i){
 		m_mlp[i].write(fs);
 	}
+
+	printf("model saved.\n");
 }
 
 void ImNetSmpl::load_net(const QString &name)
@@ -245,4 +247,6 @@ void ImNetSmpl::load_net(const QString &name)
 	for(size_t i = 0; i < m_mlp.size(); ++i){
 		m_mlp[i].read(fs);
 	}
+
+	printf("model loaded.\n");
 }
