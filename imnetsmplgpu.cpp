@@ -59,7 +59,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 		init();
 
 	std::vector< gpumat::GpuMat > gX;
-	gpumat::GpuMat gy, gy_, gD;
+	gpumat::GpuMat gy, *gy_, gD;
 
 	for(int i = 0; i < pass; ++i){
 		std::vector< ct::Matf > X;
@@ -73,7 +73,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 		qDebug("--> pass %d", i);
 		forward(gX, gy_);
 
-		gpumat::subIndOne(gy_, gy, gD);
+		gpumat::subIndOne(*gy_, gy, gD);
 
 		printf("--> backward\r");
 		backward(gD);
@@ -88,8 +88,8 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 
 			forward(gX, gy_);
 
-			float l = loss(gy, gy_);
-			p = predict(gy_);
+			float l = loss(gy, *gy_);
+			p = predict(*gy_);
 			double pr = check(y, p);
 			qDebug("loss=%f;\tpred=%f", l, pr);
 		}
@@ -99,8 +99,20 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 	}
 }
 
-void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat &yOut)
+void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat *yOut)
 {
+	m_conv[0].forward(&X, gpumat::RELU);
+	m_conv[1].forward(&m_conv[0].XOut(), gpumat::RELU);
+	m_conv[2].forward(&m_conv[1].XOut(), gpumat::RELU);
+	m_conv[3].forward(&m_conv[2].XOut(), gpumat::RELU);
+	m_conv[4].forward(&m_conv[3].XOut(), gpumat::RELU);
+
+	gpumat::conv2::vec2mat(m_conv[4].XOut(), m_A1);
+
+	m_mlp[0].forward(&m_A1);
+	m_mlp[1].forward(&m_mlp[0].A1, gpumat::SOFTMAX);
+
+	yOut = &m_mlp[1].A1;
 
 }
 

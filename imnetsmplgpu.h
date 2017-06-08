@@ -18,7 +18,7 @@ public:
 	void init();
 	void doPass(int pass, int batch);
 
-	void forward(const std::vector< gpumat::GpuMat >& X, gpumat::GpuMat& yOut);
+	void forward(const std::vector< gpumat::GpuMat >& X, gpumat::GpuMat *yOut);
 	void backward(const gpumat::GpuMat& Delta);
 	ct::Matf predict(gpumat::GpuMat &y);
 	ct::Matf predict(const QString& name, bool show_debug = false);
