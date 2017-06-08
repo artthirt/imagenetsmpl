@@ -4,6 +4,11 @@
 #include "imreader.h"
 #include <map>
 
+bool contain(const std::map<std::string, std::string>& mp, const std::string& key)
+{
+	return mp.find(key) != mp.end();
+}
+
 std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 {
 	std::map<std::string, std::string> res;
@@ -11,6 +16,9 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		std::string str = argv[i];
 		if(str == "-f" && i < argc){
 			res["imnet"] = argv[i + 1];
+		}
+		if(str == "-load" && i < argc){
+			res["load"] = argv[i + 1];
 		}
 	}
 	return res;
@@ -32,6 +40,9 @@ int main(int argc, char *argv[])
 
 	ImNetSmpl imnetSmpl;
 
+	if(contain(res, "load")){
+		imnetSmpl.load_net(res["load"].c_str());
+	}
 //	std::vector< ct::Matf > X;
 //	ct::Matf y;
 

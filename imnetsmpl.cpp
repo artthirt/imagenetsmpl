@@ -78,7 +78,7 @@ void ImNetSmpl::doPass(int pass, int batch)
 
 		m_reader->get_batch(X, y, batch);
 
-		qDebug("--> forward. pass %d", i);
+		qDebug("--> pass %d", i);
 		forward(X, y_);
 
 		ct::Matf Dlt = ct::subIndOne(y_, y);
@@ -97,6 +97,9 @@ void ImNetSmpl::doPass(int pass, int batch)
 			p = predict(y_);
 			double pr = check(y, p);
 			qDebug("loss=%f;\tpred=%f", l, pr);
+		}
+		if((i % 100) == 0){
+			save_net("model.bin");
 		}
 	}
 }
@@ -161,4 +164,58 @@ float ImNetSmpl::loss(const ct::Matf &y, ct::Matf &y_)
 	float f = r.sum() / r.rows;
 
 	return f;
+}
+
+void ImNetSmpl::save_net(const QString &name)
+{
+	std::fstream fs;
+	fs.open(name.toStdString(), std::ios_base::out | std::ios_base::binary);
+
+	if(!fs.is_open()){
+		qDebug("File %s not open", name.toLatin1().data());
+		return;
+	}
+
+//	write_vector(fs, m_cnvlayers);
+//	write_vector(fs, m_layers);
+
+//	fs.write((char*)&m_szA0, sizeof(m_szA0));
+
+	for(size_t i = 0; i < m_conv.size(); ++i){
+		conv2::convnn<float> &cnv = m_conv[i];
+		cnv.write(fs);
+	}
+
+	for(size_t i = 0; i < m_mlp.size(); ++i){
+		m_mlp[i].write(fs);
+	}
+}
+
+void ImNetSmpl::load_net(const QString &name)
+{
+	std::fstream fs;
+	fs.open(name.toStdString(), std::ios_base::in | std::ios_base::binary);
+
+	if(!fs.is_open()){
+		qDebug("File %s not open", name.toLatin1().data());
+		return;
+	}
+
+//	read_vector(fs, m_cnvlayers);
+//	read_vector(fs, m_layers);
+
+//	fs.read((char*)&m_szA0, sizeof(m_szA0));
+
+//	setConvLayers(m_cnvlayers, m_szA0);
+
+	init();
+
+	for(size_t i = 0; i < m_conv.size(); ++i){
+		conv2::convnn<float> &cnv = m_conv[i];
+		cnv.read(fs);
+	}
+
+	for(size_t i = 0; i < m_mlp.size(); ++i){
+		m_mlp[i].read(fs);
+	}
 }

@@ -21,6 +21,9 @@ public:
 	ct::Matf predict(ct::Matf &y);
 	float loss(const ct::Matf &y, ct::Matf &y_);
 
+	void save_net(const QString& name);
+	void load_net(const QString& name);
+
 private:
 	ImReader *m_reader;
 
