@@ -20,6 +20,7 @@ public:
 	void backward(const ct::Matf& Delta);
 	ct::Matf predict(ct::Matf &y);
 	ct::Matf predict(const QString& name, bool show_debug = false);
+	void predicts(const QString& sdir);
 	float loss(const ct::Matf &y, ct::Matf &y_);
 
 	void save_net(const QString& name);

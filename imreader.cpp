@@ -10,17 +10,22 @@
 
 ///////////////////////
 
-double check(const ct::Matf& i1, const ct::Matf& i2)
+double check(const ct::Matf& classes, const ct::Matf& predicted)
 {
-	if(i1.empty() || i1.rows != i2.rows || i1.cols != 1 || i2.cols != 1)
+	if(classes.empty() || classes.rows != predicted.rows || classes.cols != 1 || predicted.cols != 1)
 		return -1.;
 
+	std::stringstream ss;
+
 	int idx = 0;
-	for(int i = 0; i < i1.rows; ++i){
-		if(i1.ptr()[i] == i2.ptr()[i])
+	for(int i = 0; i < classes.rows; ++i){
+		ss << predicted.ptr()[i] << ", ";
+		if(classes.ptr()[i] == predicted.ptr()[i])
 			idx++;
 	}
-	double pred = (double)idx / i1.rows;
+	double pred = (double)idx / classes.rows;
+
+//	std::cout << "predicted: " << ss.str() << std::endl;
 
 	return pred;
 }
@@ -30,13 +35,14 @@ double check(const ct::Matf& i1, const ct::Matf& i2)
 
 //const QString ImNetPath("../../../data/imagenet/");
 
-ImReader::ImReader()
+ImReader::ImReader(int seed)
 {
-
+	cv::setRNGSeed(seed);
 }
 
-ImReader::ImReader(const QString& pathToImages)
+ImReader::ImReader(const QString& pathToImages, int seed)
 {
+	cv::setRNGSeed(seed);
 	m_image_path = pathToImages;
 	init();
 }
@@ -61,7 +67,7 @@ void ImReader::init()
 
 		std::vector< std::string > files;
 		for(int j = 0; j < inDir.count(); ++j){
-			files.push_back(QString(dir[i] + "/" + inDir[i]).toStdString());
+			files.push_back(QString(dir[i] + "/" + inDir[j]).toStdString());
 		}
 		m_all_count += files.size();
 		qDebug() << "FILES[" << dir[i] << "]=" << files.size();
@@ -83,6 +89,8 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch)
 	shuffle.resize(batch);
 	cv::randu(shuffle, 0, m_all_count);
 
+	std::stringstream ss, ss2;
+
 	for(int i = 0; i < shuffle.size(); ++i){
 		int id = shuffle[i];
 
@@ -99,14 +107,19 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch)
 			cnt += m_files[j].size();
 		}
 
+		ss << id1 << ", ";
+		ss2 << id2 << ", ";
+
 		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2]);
 		if(!Xi.empty()){
 			X[i] = Xi;
 			y.ptr()[i] = id1;
 		}else{
-			X[i].setSize(IM_HEIGHT, IM_WIDTH);
+			X[i] = ct::Matf::zeros(1, IM_HEIGHT * IM_WIDTH * 3);
 		}
 	}
+//	std::cout << "classes: " << ss.str() << std::endl;
+//	std::cout << "indexes: " << ss2.str() << std::endl;
 }
 
 ct::Matf ImReader::get_image(const std::string &name)

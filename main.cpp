@@ -34,6 +34,9 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-batch" && i < argc){
 			res["batch"] = argv[i + 1];
 		}
+		if(str == "-images" && i < argc){
+			res["images"] = argv[i + 1];
+		}
 	}
 	return res;
 }
@@ -44,12 +47,13 @@ int main(int argc, char *argv[])
 
 	if(res.empty()){
 		printf("Usage: app [OPTIONS]\n"
-			   "-f Path/To/ImageNet/Folder \n"
-			   "-load path/to/model \n"
-			   "-image path/to/image \n"
-			   "-gpu\n"
-			   "-pass [numbers pass]\n"
-			   "-batch [number batch for one]\n");
+			   "-f Path/To/ImageNet/Folder     - path to directory with ImageNet data\n"
+			   "-load path/to/model            - load model for network\n"
+			   "-image path/to/image           - predict one image\n"
+			   "-gpu                           - use gpu\n"
+			   "-pass [numbers pass]            - size of pass\n"
+			   "-batch [number batch for one]   - size of batch for pass\n"
+			   "-images path/to/dir/with/images - check all images in directory\n");
 		return 1;
 	}
 
@@ -103,6 +107,9 @@ int main(int argc, char *argv[])
 			imnetSmpl.predict(res["image"].c_str(), true);
 		}
 
+		if(contain(res, "images")){
+			imnetSmpl.predicts(res["images"].c_str());
+		}
 
 		if(!contain(res, "imnet") || res["imnet"].empty()){
 			printf("path to imagenet not specified. exit\n");

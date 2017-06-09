@@ -11,7 +11,7 @@
  * @param i2
  * @return
  */
-double check(const ct::Matf& i1, const ct::Matf& i2);
+double check(const ct::Matf& classes, const ct::Matf& predicted);
 
 class ImReader
 {
@@ -20,8 +20,8 @@ public:
 		IM_WIDTH=224, IM_HEIGHT=224
 	};
 
-	ImReader();
-	ImReader(const QString &pathToImages);
+	ImReader(int seed = 11);
+	ImReader(const QString &pathToImages, int seed = 11);
 
 	void init();
 

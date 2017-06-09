@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QDir>
+#include <QFileInfo>
 
 #include "nn.h"
 #include "convnn2.h"
@@ -150,7 +151,6 @@ ct::Matf ImNetSmpl::predict(ct::Matf &y)
 ct::Matf ImNetSmpl::predict(const QString &name, bool show_debug)
 {
 	QString n = QDir::fromNativeSeparators(name);
-	qDebug() << n;
 
 	if(!QFile::exists(n) || !m_reader)
 		return ct::Matf();
@@ -161,11 +161,40 @@ ct::Matf ImNetSmpl::predict(const QString &name, bool show_debug)
 	forward(X, y);
 
 	if(show_debug){
+		qDebug() << n;
 		int cls = y.argmax(0, 1);
-		printf("--> predicted class %d\n", cls);
+		QFileInfo f(n);
+		printf("--> predicted class %d\n; file: %s", cls, f.fileName().toLatin1().data());
 	}
 
 	return y;
+}
+
+void ImNetSmpl::predicts(const QString &sdir)
+{
+	QString n = QDir::fromNativeSeparators(sdir);
+	qDebug() << n;
+
+	QDir dir(n);
+	QStringList sl;
+	sl << "*.jpg" << "*.jpeg" << "*.bmp" << "*.png" << "*.tiff";
+	dir.setNameFilters(sl);
+
+	printf("Start predicting. Count files %d\n", dir.count());
+
+	std::cout << "predicted classes: ";
+
+	for(int i= 0; i < dir.count(); ++i){
+		QString s = dir.path() + "/" + dir[i];
+		QFileInfo f(s);
+		if(f.isFile()){
+			ct::Matf y = predict(s, false);
+			int cls = y.argmax(0, 1);
+			std::cout << cls << ", ";
+		}
+	}
+	std::cout << std::endl;
+	printf("Stop predicting\n");
 }
 
 float ImNetSmpl::loss(const ct::Matf &y, ct::Matf &y_)
