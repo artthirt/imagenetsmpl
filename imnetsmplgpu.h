@@ -27,6 +27,8 @@ public:
 	void save_net(const QString& name);
 	void load_net(const QString& name);
 
+	void setModelName(const QString& name);
+
 private:
 	ImReader *m_reader;
 
@@ -38,6 +40,7 @@ private:
 	std::vector< gpumat::GpuMat > m_deltas;
 
 	int m_check_count;
+	QString m_model;
 
 	bool m_init;
 

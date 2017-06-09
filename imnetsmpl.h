@@ -25,6 +25,8 @@ public:
 	void save_net(const QString& name);
 	void load_net(const QString& name);
 
+	void setModelName(const QString& name);
+
 private:
 	ImReader *m_reader;
 
@@ -33,6 +35,7 @@ private:
 	int m_classes;
 	ct::Matf m_A1;
 	ct::MlpOptim<float> m_optim;
+	QString m_model;
 
 	bool m_init;
 };

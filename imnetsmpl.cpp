@@ -13,6 +13,7 @@ ImNetSmpl::ImNetSmpl()
 	m_reader = 0;
 	m_classes = 200;
 	m_init = false;
+	m_model = "model.bin";
 }
 
 void ImNetSmpl::setReader(ImReader *ir)
@@ -86,7 +87,7 @@ void ImNetSmpl::doPass(int pass, int batch)
 			qDebug("loss=%f;\tpred=%f", l, pr);
 		}
 		if((i % 20) == 0){
-			save_net("model.bin");
+			save_net(m_model);
 		}
 	}
 }
@@ -136,7 +137,7 @@ ct::Matf ImNetSmpl::predict(ct::Matf &y)
 {
 	ct::Matf res;
 
-	ct::save_mat(y, "tmp.txt");
+//	ct::save_mat(y, "tmp.txt");
 
 	res.setSize(y.rows, 1);
 
@@ -217,6 +218,8 @@ void ImNetSmpl::load_net(const QString &name)
 		return;
 	}
 
+	m_model = n;
+
 //	read_vector(fs, m_cnvlayers);
 //	read_vector(fs, m_layers);
 
@@ -236,4 +239,10 @@ void ImNetSmpl::load_net(const QString &name)
 	}
 
 	printf("model loaded.\n");
+}
+
+void ImNetSmpl::setModelName(const QString &name)
+{
+	if(!name.isEmpty())
+		m_model = name;
 }

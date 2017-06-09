@@ -9,6 +9,7 @@ ImNetSmplGpu::ImNetSmplGpu()
 	m_init = false;
 	m_check_count = 50;
 	m_classes = 200;
+	m_model = "model.bin";
 }
 
 void ImNetSmplGpu::setReader(ImReader *ir)
@@ -110,7 +111,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 			qDebug("pass %d: loss=%f;\tpred=%f", i, ls / idx, pr / idx);
 		}
 		if((i % 20) == 0){
-			save_net("model.bin");
+			save_net(m_model);
 		}
 	}
 }
@@ -255,6 +256,8 @@ void ImNetSmplGpu::load_net(const QString &name)
 		return;
 	}
 
+	m_model = n;
+
 //	read_vector(fs, m_cnvlayers);
 //	read_vector(fs, m_layers);
 
@@ -275,4 +278,10 @@ void ImNetSmplGpu::load_net(const QString &name)
 
 	printf("model loaded.\n");
 
+}
+
+void ImNetSmplGpu::setModelName(const QString &name)
+{
+	if(!name.isEmpty())
+		m_model = name;
 }

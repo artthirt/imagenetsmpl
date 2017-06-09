@@ -28,6 +28,12 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-gpu"){
 			res["gpu"] = "1";
 		}
+		if(str == "-pass" && i < argc){
+			res["pass"] = argv[i + 1];
+		}
+		if(str == "-batch" && i < argc){
+			res["batch"] = argv[i + 1];
+		}
 	}
 	return res;
 }
@@ -41,7 +47,9 @@ int main(int argc, char *argv[])
 			   "-f Path/To/ImageNet/Folder \n"
 			   "-load path/to/model \n"
 			   "-image path/to/image \n"
-			   "-gpu");
+			   "-gpu\n"
+			   "-pass [numbers pass]\n"
+			   "-batch [number batch for one]\n");
 		return 1;
 	}
 
@@ -50,6 +58,19 @@ int main(int argc, char *argv[])
 	ImReader ir(QString(res["imnet"].c_str()));
 	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
 
+
+	int batch = 10;
+	int pass = 1000;
+
+	if(contain(res, "pass")){
+		pass = std::stoi(res["pass"]);
+	}
+
+	if(contain(res, "batch")){
+		batch = std::stoi(res["batch"]);
+	}
+
+	printf("Parameters startup: pass=%d, batch=%d\n", pass, batch);
 
 	if(contain(res, "gpu")){
 		ImNetSmplGpu imnetSmpl;
@@ -68,7 +89,7 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 
-		imnetSmpl.doPass(1000, 10);
+		imnetSmpl.doPass(pass, batch);
 	}else{
 		ImNetSmpl imnetSmpl;
 
@@ -91,7 +112,7 @@ int main(int argc, char *argv[])
 //	std::vector< ct::Matf > X;
 //	ct::Matf y;
 
-		imnetSmpl.doPass(1000, 10);
+		imnetSmpl.doPass(pass, batch);
 	}
 
 //	ir.get_batch(X, y, 10);
