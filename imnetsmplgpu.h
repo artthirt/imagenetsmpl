@@ -22,6 +22,7 @@ public:
 	void backward(const gpumat::GpuMat& Delta);
 	ct::Matf predict(gpumat::GpuMat &y);
 	ct::Matf predict(const QString& name, bool show_debug = false);
+	void predicts(const QString& sdir);
 	float loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_);
 
 	void save_net(const QString& name);

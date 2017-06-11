@@ -8,6 +8,7 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 
+#include <random>
 ///////////////////////
 
 double check(const ct::Matf& classes, const ct::Matf& predicted)
@@ -77,7 +78,9 @@ void ImReader::init()
 	qDebug() << "DIRS" << m_dirs.size();
 }
 
-void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch)
+static std::mt19937 _rnd;
+
+void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool flip)
 {
 	if(m_files.empty())
 		return;
@@ -90,6 +93,8 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch)
 	cv::randu(shuffle, 0, m_all_count);
 
 	std::stringstream ss, ss2;
+
+	std::binomial_distribution<int> bn(1, 0.5);
 
 	for(int i = 0; i < shuffle.size(); ++i){
 		int id = shuffle[i];
@@ -110,7 +115,12 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch)
 		ss << id1 << ", ";
 		ss2 << id2 << ", ";
 
-		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2]);
+		bool fl = false;
+		if(flip){
+			fl = bn(_rnd);
+		}
+
+		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], fl);
 		if(!Xi.empty()){
 			X[i] = Xi;
 			y.ptr()[i] = id1;
@@ -122,7 +132,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch)
 //	std::cout << "indexes: " << ss2.str() << std::endl;
 }
 
-ct::Matf ImReader::get_image(const std::string &name)
+ct::Matf ImReader::get_image(const std::string &name, bool flip)
 {
 	ct::Matf res;
 
@@ -130,6 +140,11 @@ ct::Matf ImReader::get_image(const std::string &name)
 	if(m.empty())
 		return res;
 	cv::resize(m, m, cv::Size(IM_WIDTH, IM_HEIGHT));
+
+	if(flip){
+		cv::flip(m, m, 1);
+	}
+
 	m.convertTo(m, CV_32F, 1./255., 0);
 
 	res.setSize(1, m.cols * m.rows * m.channels());

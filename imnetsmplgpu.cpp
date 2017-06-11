@@ -7,8 +7,8 @@
 ImNetSmplGpu::ImNetSmplGpu()
 {
 	m_init = false;
-	m_check_count = 50;
-	m_classes = 200;
+	m_check_count = 200;
+	m_classes = 1000;
 	m_model = "model.bin";
 }
 
@@ -23,26 +23,27 @@ void ImNetSmplGpu::init()
 
 	m_conv.resize(5);
 
-	m_conv[0].init(ct::Size(W, H), 3, 2, 64, ct::Size(5, 5), false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 2, 128, ct::Size(5, 5), false);
-	m_conv[2].init(m_conv[1].szOut(), 128, 2, 128, ct::Size(5, 5), false);
-	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(5, 5));
-	m_conv[4].init(m_conv[3].szOut(), 256, 1, 256, ct::Size(5, 5));
+	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7), false);
+	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3));
+	m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3));
+	m_conv[3].init(m_conv[2].szOut(), 256, 1, 512, ct::Size(3, 3));
+	m_conv[4].init(m_conv[3].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
 
 	qDebug("Out=[%dx%dx%d]", m_conv[4].szOut().width, m_conv[4].szOut().height, m_conv[4].K);
 
 	int outFeatures = m_conv[4].outputFeatures();
 
-	m_mlp.resize(2);
+	m_mlp.resize(3);
 
 	m_mlp[0].init(outFeatures, 4096, gpumat::GPU_FLOAT);
-	m_mlp[1].init(4096, m_classes, gpumat::GPU_FLOAT);
+	m_mlp[1].init(4096, 2048, gpumat::GPU_FLOAT);
+	m_mlp[2].init(2048, m_classes, gpumat::GPU_FLOAT);
 
 	m_optim.init(m_mlp);
-	m_optim.setAlpha(0.001f);
+	m_optim.setAlpha(0.0001f);
 
 	for(int i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setAlpha(0.001f);
+		m_conv[i].setAlpha(0.0001);
 	}
 
 	m_init = true;
@@ -72,7 +73,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 		std::vector< ct::Matf > X;
 		ct::Matf y;
 
-		m_reader->get_batch(X, y, batch);
+		m_reader->get_batch(X, y, batch, true);
 
 		get_gX(X, gX);
 		gpumat::convert_to_gpu(y, gy);
@@ -87,7 +88,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 //		printf("--> backward\r");
 		backward(gD);
 
-		if((i % 5) == 0){
+		if((i % 40) == 0){
 			std::vector< ct::Matf > X;
 			ct::Matf y, p;
 
@@ -110,7 +111,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 			if(!idx)idx = 1;
 			qDebug("pass %d: loss=%f;\tpred=%f", i, ls / idx, pr / idx);
 		}
-		if((i % 20) == 0){
+		if((i % 40) == 0){
 			save_net(m_model);
 		}
 	}
@@ -127,9 +128,10 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 	gpumat::conv2::vec2mat(m_conv[4].XOut(), m_A1);
 
 	m_mlp[0].forward(&m_A1);
-	m_mlp[1].forward(&m_mlp[0].A1, gpumat::SOFTMAX);
+	m_mlp[1].forward(&m_mlp[0].A1);
+	m_mlp[2].forward(&m_mlp[1].A1, gpumat::SOFTMAX);
 
-	*pyOut = &m_mlp[1].A1;
+	*pyOut = &m_mlp[2].A1;
 
 }
 
@@ -138,7 +140,8 @@ void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 	if(m_mlp.empty() || m_mlp[1].A1.empty())
 		return;
 
-	m_mlp[1].backward(Delta);
+	m_mlp[2].backward(Delta);
+	m_mlp[1].backward(m_mlp[2].DltA0);
 	m_mlp[0].backward(m_mlp[1].DltA0);
 
 	gpumat::conv2::mat2vec(m_mlp[0].DltA0, m_conv[4].szK, m_deltas);
@@ -175,7 +178,7 @@ ct::Matf ImNetSmplGpu::predict(gpumat::GpuMat &gy)
 ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
 {
 	QString n = QDir::fromNativeSeparators(name);
-	qDebug() << n;
+//	qDebug() << n;
 
 	if(!QFile::exists(n) || !m_reader)
 		return ct::Matf();
@@ -199,6 +202,34 @@ ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
 
 	return y;
 }
+
+void ImNetSmplGpu::predicts(const QString &sdir)
+{
+	QString n = QDir::fromNativeSeparators(sdir);
+	qDebug() << n;
+
+	QDir dir(n);
+	QStringList sl;
+	sl << "*.jpg" << "*.jpeg" << "*.bmp" << "*.png" << "*.tiff";
+	dir.setNameFilters(sl);
+
+	printf("Start predicting. Count files %d\n", dir.count());
+
+	std::cout << "predicted classes: ";
+
+	for(int i= 0; i < dir.count(); ++i){
+		QString s = dir.path() + "/" + dir[i];
+		QFileInfo f(s);
+		if(f.isFile()){
+			ct::Matf y = predict(s, false);
+			int cls = y.argmax(0, 1);
+			std::cout << cls << ", ";
+		}
+	}
+	std::cout << std::endl;
+	printf("Stop predicting\n");
+}
+
 
 float ImNetSmplGpu::loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_)
 {

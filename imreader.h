@@ -25,9 +25,9 @@ public:
 
 	void init();
 
-	void get_batch(std::vector< ct::Matf >& X, ct::Matf& y, int batch);
+	void get_batch(std::vector< ct::Matf >& X, ct::Matf& y, int batch, bool flip = false);
 
-	ct::Matf get_image(const std::string& name);
+	ct::Matf get_image(const std::string& name, bool flip = false);
 
 	void setImagePath(const QString& path);
 

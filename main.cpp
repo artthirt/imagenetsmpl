@@ -88,6 +88,10 @@ int main(int argc, char *argv[])
 			imnetSmpl.predict(res["image"].c_str(), true);
 		}
 
+		if(contain(res, "images")){
+			imnetSmpl.predicts(res["images"].c_str());
+		}
+
 		if(!contain(res, "imnet") || res["imnet"].empty()){
 			printf("path to imagenet not specified. exit\n");
 			return 1;
