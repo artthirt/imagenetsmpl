@@ -334,6 +334,7 @@ bool MlpOptimSG::pass(std::vector<mlp> &_mlp)
 		gpumat::sub(mlpi.B, mlpi.gB, 1., m_alpha);
 
 	}
+	return true;
 }
 
 //////////////////////////////////////////////////

@@ -19,26 +19,46 @@ inline T sqr(T val)
 	return val * val;
 }
 
+template< typename T >
+class Optimizer{
+public:
+	Optimizer(){
+		m_alpha = (T)0.001;
+		m_iteration = 0;
+	}
+	T alpha()const{
+		return m_alpha;
+	}
+	void setAlpha(T v){
+		m_alpha = v;
+	}
+	uint32_t iteration() const{
+		return m_iteration;
+	}
+	virtual bool init(const std::vector< ct::Mat_<T> >& W, const std::vector< ct::Mat_<T> >& B){
+		return false;
+	}
+
+	virtual bool pass(const std::vector< ct::Mat_< T > >& gradW, const std::vector< ct::Mat_< T > >& gradB,
+			  std::vector< ct::Mat_<T> >& W, std::vector< ct::Mat_<T> >& b){
+		return false;
+	}
+
+protected:
+	T m_alpha;
+	uint32_t m_iteration;
+};
+
 /**
  * @brief The AdamOptimizer class
  */
 template< typename T >
-class AdamOptimizer{
+class AdamOptimizer: public Optimizer<T>{
 public:
-	AdamOptimizer(){
-		m_alpha = (T)0.001;
+	AdamOptimizer(): Optimizer(){
 		m_betha1 = (T)0.9;
 		m_betha2 = (T)0.999;
-		m_iteration = 0;
 		m_init = false;
-	}
-
-	T alpha()const{
-		return m_alpha;
-	}
-
-	void setAlpha(T v){
-		m_alpha = v;
 	}
 
 	T betha1() const{
@@ -55,10 +75,6 @@ public:
 
 	void setBetha2(T v){
 		m_betha2 = v;
-	}
-
-	uint32_t iteration() const{
-		return m_iteration;
 	}
 
 	bool init(const std::vector< ct::Mat_<T> >& W, const std::vector< ct::Mat_<T> >& B){
@@ -169,10 +185,8 @@ public:
 
 
 protected:
-	uint32_t m_iteration;
 	T m_betha1;
 	T m_betha2;
-	T m_alpha;
 	bool m_init;
 
 	std::vector< ct::Mat_<T> > m_mW;
@@ -203,9 +217,9 @@ protected:
  * @brief The MomentOptimizer class
  */
 template< typename T >
-class MomentOptimizer{
+class MomentOptimizer: public Optimizer<T>{
 public:
-	MomentOptimizer(){
+	MomentOptimizer(): Optimizer(){
 		m_alpha = T(0.01);
 		m_betha = T(0.9);
 	}
@@ -249,9 +263,31 @@ private:
 	std::vector< ct::Mat_<T> > m_mW;
 	std::vector< T > m_mb;
 
-	T m_alpha;
 	T m_betha;
 };
+
+/**
+ * @brief The StohasticGradientOptimizer class
+ */
+template< typename T >
+class StohasticGradientOptimizer: public Optimizer<T>{
+public:
+	StohasticGradientOptimizer(): Optimizer(){
+
+	}
+	bool pass(const std::vector<ct::Mat_<ct::T> > &gradW, const std::vector<ct::Mat_<ct::T> > &gradB,
+			  std::vector<ct::Mat_<ct::T> > &W, std::vector<ct::Mat_<ct::T> > &b)
+	{
+		if(W.empty() || gradW.size() != W.size() || gradB.empty() || gradB.size() != gradW.size())
+			throw new std::invalid_argument("StohasticGradientOptimizer: wrong parameters");
+		for(size_t i = 0; i < W.size(); ++i){
+			W[i] -= m_alpha * gradW[i];
+			B[i] -= m_alpha * gradB[i];
+		}
+		return true;
+	}
+};
+
 
 /**
  * @brief The SimpleAutoencoder class

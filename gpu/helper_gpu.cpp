@@ -133,7 +133,7 @@ bool Optimizer::init(const std::vector<GpuMat> &gradW, const std::vector<GpuMat>
 
 bool Optimizer::pass(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB, std::vector<GpuMat> &W, std::vector<GpuMat> &b)
 {
-
+	return false;
 }
 
 ///////////////////////////////

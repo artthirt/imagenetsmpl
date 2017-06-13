@@ -365,7 +365,8 @@ public:
 	std::vector< ct::Mat_<T> > vgW;			/// for delta weights
 	std::vector< ct::Mat_<T> > vgB;			/// for delta bias
 	std::vector< ct::Mat_<T> > Mask;		/// masks for bakward pass (created in forward pass)
-	ct::AdamOptimizer< T > m_optim;
+	ct::Optimizer< T > *m_optim;
+	ct::AdamOptimizer<T> m_adam;
 
 	ct::Mat_<T> gW;							/// gradient for weights
 	ct::Mat_<T> gB;							/// gradient for biases
@@ -376,6 +377,13 @@ public:
 		stride = 1;
 		m_use_transpose = true;
 		m_Lambda = 0;
+		m_optim = &m_adam;
+	}
+
+	void setOptimizer(ct::Optimizer<T>* optim){
+		if(!optim)
+			return;
+		m_optim = optim;
 	}
 
 	std::vector< ct::Mat_<T> >& XOut(){
@@ -423,7 +431,7 @@ public:
 	}
 
 	void setAlpha(T alpha){
-		m_optim.setAlpha(alpha);
+		m_optim->setAlpha(alpha);
 	}
 
 	void setLambda(T val){
@@ -455,7 +463,7 @@ public:
 		std::vector< ct::Mat_<T> > vW, vB;
 		vW.push_back(W);
 		vB.push_back(B);
-		m_optim.init(vW, vB);
+		m_optim->init(vW, vB);
 	}
 
 	void forward(const std::vector< ct::Mat_<T> >* _pX, ct::etypefunction func){
@@ -632,7 +640,7 @@ public:
 		vgB.push_back(gB);
 		vB.push_back(B);
 
-		m_optim.pass(vgW, vgB, vW, vB);
+		m_optim->pass(vgW, vgB, vW, vB);
 		W = vW[0]; B = vB[0];
 
 		//printf("7\n");

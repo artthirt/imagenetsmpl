@@ -9,11 +9,15 @@
 #include "convnn2.h"
 #include "mlp.h"
 
+const int cnv_size = 4;
+const int mlp_size = 3;
+
 ImNetSmpl::ImNetSmpl()
 {
-	m_learningRate =0.001;
+	m_check_count = 50;
+	m_learningRate = 0.0001;
 	m_reader = 0;
-	m_classes = 200;
+	m_classes = 1000;
 	m_init = false;
 	m_model = "model.bin";
 }
@@ -32,22 +36,22 @@ void ImNetSmpl::init()
 {
 	int W = ImReader::IM_WIDTH, H = ImReader::IM_HEIGHT;
 
-	m_conv.resize(5);
+	m_conv.resize(cnv_size);
 
-	m_conv[0].init(ct::Size(W, H), 3, 2, 64, ct::Size(5, 5), false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 2, 128, ct::Size(5, 5), false);
-	m_conv[2].init(m_conv[1].szOut(), 128, 2, 128, ct::Size(5, 5), false);
-	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(5, 5));
-	m_conv[4].init(m_conv[3].szOut(), 256, 1, 256, ct::Size(5, 5));
+	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7));
+	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3));
+	m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3));
+	m_conv[3].init(m_conv[2].szOut(), 256, 1, 1024, ct::Size(3, 3), false);
 
-	qDebug("Out=[%dx%dx%d]", m_conv[4].szOut().width, m_conv[4].szOut().height, m_conv[4].K);
+	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
-	int outFeatures = m_conv[4].outputFeatures();
+	int outFeatures = m_conv.back().outputFeatures();
 
-	m_mlp.resize(2);
+	m_mlp.resize(mlp_size);
 
 	m_mlp[0].init(outFeatures, 4096);
-	m_mlp[1].init(4096, m_classes);
+	m_mlp[1].init(4096, 2048);
+	m_mlp[2].init(2048, m_classes);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
@@ -68,74 +72,98 @@ void ImNetSmpl::doPass(int pass, int batch)
 		init();
 
 	for(int i = 0; i < pass; ++i){
+		std::cout << "pass " << i << "\r" << std::flush;
+
 		std::vector< ct::Matf > X;
 		ct::Matf y, y_;
 
 		m_reader->get_batch(X, y, batch);
 
-		qDebug("--> pass %d", i);
+//		qDebug("--> pass %d", i);
 		forward(X, y_);
 
 		ct::Matf Dlt = ct::subIndOne(y_, y);
 
-		printf("--> backward\r");
+//		printf("--> backward\r");
 		backward(Dlt);
 
-		if((i % 5) == 0){
+		if((i % 10) == 0){
 			std::vector< ct::Matf > X;
 			ct::Matf y, y_, p;
-			m_reader->get_batch(X, y, batch * 3);
 
-			forward(X, y_);
+			int idx = 0;
+			double ls = 0, pr = 0;
+			for(int i = 0; i < m_check_count; i += batch, idx++){
+				m_reader->get_batch(X, y, batch);
 
-			float l = loss(y, y_);
-			p = predict(y_);
-			double pr = check(y, p);
-			qDebug("loss=%f;\tpred=%f", l, pr);
+//				gpumat::save_gmat(gy, "tmp1.txt");
+//				ct::save_mat(y, "tmp2.txt");
+
+				forward(X, y_);
+
+				ls += loss(y, y_);
+				p = predict(y_);
+				pr += check(y, p);
+			}
+			if(!idx)idx = 1;
+			printf("pass %d: loss=%f;\tpred=%f\n", i, ls / idx, pr / idx);
 		}
 		if((i % 20) == 0){
-			save_net(m_model);
+//			save_net(m_model);
 		}
 	}
 }
 
 void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut)
 {
+//	m_conv[0].forward(&X, ct::RELU);
+//	m_conv[1].forward(&m_conv[0].XOut(), ct::RELU);
+//	m_conv[2].forward(&m_conv[1].XOut(), ct::RELU);
+//	m_conv[3].forward(&m_conv[2].XOut(), ct::RELU);
+//	m_conv[4].forward(&m_conv[3].XOut(), ct::RELU);
 	m_conv[0].forward(&X, ct::RELU);
-	m_conv[1].forward(&m_conv[0].XOut(), ct::RELU);
-	m_conv[2].forward(&m_conv[1].XOut(), ct::RELU);
-	m_conv[3].forward(&m_conv[2].XOut(), ct::RELU);
-	m_conv[4].forward(&m_conv[3].XOut(), ct::RELU);
+	for(size_t i = 1; i < m_conv.size(); ++i){
+		m_conv[i].forward(&m_conv[i - 1].XOut(), ct::RELU);
+	}
 
-	conv2::vec2mat(m_conv[4].XOut(), m_A1);
+	conv2::vec2mat(m_conv.back().XOut(), m_A1);
 
+//	m_mlp[0].forward(&m_A1);
+//	m_mlp[1].forward(&m_mlp[0].A1, ct::SOFTMAX);
 	m_mlp[0].forward(&m_A1);
-	m_mlp[1].forward(&m_mlp[0].A1, ct::SOFTMAX);
+	m_mlp[1].forward(&m_mlp[0].A1);
+	m_mlp[2].forward(&m_mlp[1].A1, ct::SOFTMAX);
 
-	yOut =m_mlp[1].A1;
+	yOut = m_mlp.back().A1;
 }
 
 void ImNetSmpl::backward(const ct::Matf &Delta)
 {
-	if(m_mlp.empty() || m_mlp[1].A1.empty())
+	if(m_mlp.empty() || m_mlp[2].A1.empty())
 		return;
 
-	m_mlp[1].backward(Delta);
+	m_mlp.back().backward(Delta);
+	m_mlp[1].backward(m_mlp[2].DltA0);
 	m_mlp[0].backward(m_mlp[1].DltA0);
 
 	std::vector< ct::Matf > deltas;
-	conv2::mat2vec(m_mlp[0].DltA0, m_conv[4].szK, deltas);
+	conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, deltas);
 
-	printf("-cnv4        \r");
-	m_conv[4].backward(deltas);
-	printf("-cnv3        \r");
-	m_conv[3].backward(m_conv[4].Dlt);
-	printf("-cnv2        \r");
-	m_conv[2].backward(m_conv[3].Dlt);
-	printf("-cnv1        \r");
-	m_conv[1].backward(m_conv[2].Dlt);
-	printf("-cnv0        \r\n");
-	m_conv[0].backward(m_conv[1].Dlt, true);
+	m_conv.back().backward(deltas);
+	for(int i = m_conv.size() - 2; i >= 0; i--){
+		m_conv[i].backward(m_conv[i + 1].Dlt, i == 0);
+	}
+
+//	printf("-cnv4        \r");
+//	m_conv[4].backward(deltas);
+//	printf("-cnv3        \r");
+//	m_conv[3].backward(m_conv[4].Dlt);
+//	printf("-cnv2        \r");
+//	m_conv[2].backward(m_conv[3].Dlt);
+//	printf("-cnv1        \r");
+//	m_conv[1].backward(m_conv[2].Dlt);
+//	printf("-cnv0        \r\n");
+//	m_conv[0].backward(m_conv[1].Dlt, true);
 
 	m_optim.pass(m_mlp);
 }

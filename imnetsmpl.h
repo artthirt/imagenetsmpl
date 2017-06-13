@@ -41,6 +41,7 @@ private:
 	ct::MlpOptim<float> m_optim;
 	QString m_model;
 
+	int m_check_count;
 	bool m_init;
 };
 

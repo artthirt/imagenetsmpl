@@ -13,6 +13,10 @@ class mlp;
 template< typename T >
 class MlpOptim: public AdamOptimizer<T>{
 public:
+	MlpOptim(): AdamOptimizer(){
+
+	}
+
 #define AO this->
 
 	bool init(std::vector< ct::mlp<T> >& Mlp){
@@ -73,6 +77,68 @@ public:
 			_mlp.W -= AO m_alpha * mWs;
 			_mlp.B -= AO m_alpha * mBs;
 		}
+		return true;
+	}
+};
+
+template< typename T >
+class MlpOptimSG: public StohasticGradientOptimizer<T>{
+public:
+	MlpOptimSG(): StohasticGradientOptimizer(){
+
+	}
+	bool pass(std::vector< ct::mlp<T> >& Mlp){
+		if(Mlp.empty())
+			return false;
+
+		for(size_t i = 0; i < Mlp.size(); ++i){
+			ct::mlp<T>& _mlp = Mlp[i];
+
+			_mlp.W -= m_alpha * _mlp.gW;
+			_mlp.B -= m_alpha * _mlp.gB;
+		}
+
+		return true;
+	}
+};
+
+template< typename T >
+class MlpOptimMoment: public MomentOptimizer<T>{
+public:
+	MlpOptimMoment(): MomentOptimizer(){
+
+	}
+	bool init(std::vector< ct::mlp<T> >& Mlp){
+		if(Mlp.empty())
+			return false;
+
+		m_iteration = 0;
+
+		m_mW.resize(Mlp.size());
+		m_mb.resize(Mlp.size());
+
+		for(size_t i = 0; i < Mlp.size(); i++){
+			ct::mlp<T>& _mlp = Mlp[i];
+			m_mW[i].setSize(_mlp.W.size());
+			m_mW[i].fill(0);
+
+			m_mb[i].setSize(_mlp.B.size());
+			m_mb[i].fill(0);
+		}
+		return true;
+	}
+
+	bool pass(std::vector< ct::mlp<T> >& Mlp){
+		if(Mlp.empty())
+			return false;
+
+		for(size_t i = 0; i < Mlp.size(); ++i){
+			ct::mlp<T>& _mlp = Mlp[i];
+
+			_mlp.W -= m_alpha * _mlp.gW;
+			_mlp.B -= m_alpha * _mlp.gB;
+		}
+
 		return true;
 	}
 };
