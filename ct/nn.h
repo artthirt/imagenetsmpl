@@ -55,7 +55,7 @@ protected:
 template< typename T >
 class AdamOptimizer: public Optimizer<T>{
 public:
-	AdamOptimizer(): Optimizer(){
+	AdamOptimizer(): Optimizer<T>(){
 		m_betha1 = (T)0.9;
 		m_betha2 = (T)0.999;
 		m_init = false;
@@ -83,7 +83,7 @@ public:
 
 		using namespace ct;
 
-		m_iteration = 0;
+		Optimizer<T>::m_iteration = 0;
 
 		m_mW.resize(W.size());
 		m_mb.resize(W.size());
@@ -114,9 +114,9 @@ public:
 
 		using namespace ct;
 
-		m_iteration++;
-		T sb1 = (T)(1. / (1. - pow(m_betha1, m_iteration)));
-		T sb2 = (T)(1. / (1. - pow(m_betha2, m_iteration)));
+		Optimizer<T>::m_iteration++;
+		T sb1 = (T)(1. / (1. - pow(m_betha1, Optimizer<T>::m_iteration)));
+		T sb2 = (T)(1. / (1. - pow(m_betha2, Optimizer<T>::m_iteration)));
 		T eps = (T)(10e-8);
 
 		for(size_t i = 0; i < gradW.size(); ++i){
@@ -136,8 +136,8 @@ public:
 			mWs = elemwiseDiv(mWs, vWs);
 			mBs = elemwiseDiv(mBs, vBs);
 
-			W[i] -= m_alpha * mWs;
-			b[i] -= m_alpha * mBs;
+			W[i] -= Optimizer<T>::m_alpha * mWs;
+			b[i] -= Optimizer<T>::m_alpha * mBs;
 		}
 		return true;
 	}
@@ -152,9 +152,9 @@ public:
 
 		using namespace ct;
 
-		m_iteration++;
-		T sb1 = (T)(1. / (1. - pow(m_betha1, m_iteration)));
-		T sb2 = (T)(1. / (1. - pow(m_betha2, m_iteration)));
+		Optimizer<T>::m_iteration++;
+		T sb1 = (T)(1. / (1. - pow(m_betha1, Optimizer<T>::m_iteration)));
+		T sb2 = (T)(1. / (1. - pow(m_betha2, Optimizer<T>::m_iteration)));
 		T eps = (T)(10e-8);
 
 		for(size_t i = 0; i < gradW.size(); ++i){
@@ -174,8 +174,8 @@ public:
 			mWs = elemwiseDiv(mWs, vWs);
 			mBs /= vBs;
 
-			W[i] -= m_alpha * mWs;
-			b[i] -= m_alpha * mBs;
+			W[i] -= Optimizer<T>::m_alpha * mWs;
+			b[i] -= Optimizer<T>::m_alpha * mBs;
 		}
 		return true;
 	}
@@ -219,14 +219,11 @@ protected:
 template< typename T >
 class MomentOptimizer: public Optimizer<T>{
 public:
-	MomentOptimizer(): Optimizer(){
-		m_alpha = T(0.01);
+	MomentOptimizer(): Optimizer<T>(){
+		Optimizer<T>::m_alpha = T(0.01);
 		m_betha = T(0.9);
 	}
 
-	void setAlpha(T val){
-		m_alpha = val;
-	}
 	void setBetha(T val){
 		m_betha = val;
 	}
@@ -254,8 +251,8 @@ public:
 			m_mb[i] = m_betha * m_mb[i] + (1.f - m_betha) * gradB[i];
 		}
 		for(int i = 0; i < m_mW.size(); ++i){
-			W[i] += ((-m_alpha) * m_mW[i]);
-			B[i] += ((-m_alpha) * m_mb[i]);
+			W[i] += ((-Optimizer<T>::m_alpha) * m_mW[i]);
+			B[i] += ((-Optimizer<T>::m_alpha) * m_mb[i]);
 		}
 	}
 
@@ -272,17 +269,17 @@ private:
 template< typename T >
 class StohasticGradientOptimizer: public Optimizer<T>{
 public:
-	StohasticGradientOptimizer(): Optimizer(){
+	StohasticGradientOptimizer(): Optimizer<T>(){
 
 	}
-	bool pass(const std::vector<ct::Mat_<ct::T> > &gradW, const std::vector<ct::Mat_<ct::T> > &gradB,
-			  std::vector<ct::Mat_<ct::T> > &W, std::vector<ct::Mat_<ct::T> > &b)
+	bool pass(const std::vector<ct::Mat_<T> > &gradW, const std::vector<ct::Mat_<T> > &gradB,
+			  std::vector<ct::Mat_<T> > &W, std::vector<ct::Mat_<T> > &b)
 	{
 		if(W.empty() || gradW.size() != W.size() || gradB.empty() || gradB.size() != gradW.size())
 			throw new std::invalid_argument("StohasticGradientOptimizer: wrong parameters");
 		for(size_t i = 0; i < W.size(); ++i){
-			W[i] -= m_alpha * gradW[i];
-			B[i] -= m_alpha * gradB[i];
+			W[i] -= Optimizer<T>::m_alpha * gradW[i];
+			b[i] -= Optimizer<T>::m_alpha * gradB[i];
 		}
 		return true;
 	}
