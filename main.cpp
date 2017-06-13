@@ -1,5 +1,4 @@
 #include <QCoreApplication>
-#include <QDebug>
 
 #include "imnetsmpl.h"
 #include "imnetsmplgpu.h"
@@ -34,6 +33,9 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-batch" && i < argc){
 			res["batch"] = argv[i + 1];
 		}
+		if(str == "-lr" && i < argc){
+			res["lr"] = argv[i + 1];
+		}
 		if(str == "-images" && i < argc){
 			res["images"] = argv[i + 1];
 		}
@@ -47,24 +49,26 @@ int main(int argc, char *argv[])
 
 	if(res.empty()){
 		printf("Usage: app [OPTIONS]\n"
-			   "-f Path/To/ImageNet/Folder     - path to directory with ImageNet data\n"
-			   "-load path/to/model            - load model for network\n"
-			   "-image path/to/image           - predict one image\n"
-			   "-gpu                           - use gpu\n"
-			   "-pass [numbers pass]            - size of pass\n"
-			   "-batch [number batch for one]   - size of batch for pass\n"
-			   "-images path/to/dir/with/images - check all images in directory\n");
+			   "-f Path/To/ImageNet/Folder		- path to directory with ImageNet data\n"
+			   "-load path/to/model				- load model for network\n"
+			   "-image path/to/image			- predict one image\n"
+			   "-gpu							- use gpu\n"
+			   "-pass [numbers pass]            - size of pass *default: 1000\n"
+			   "-batch [number batch for one]   - size of batch for pass (default: 10)\n"
+			   "-images path/to/dir/with/images - check all images in directory\n"
+			   "-lr [learing rate]				- learing rate (default: 0.001");
 		return 1;
 	}
 
 	QCoreApplication a(argc, argv);
 
-	ImReader ir(QString(res["imnet"].c_str()));
+	ImReader ir(QString(res["imnet"].c_str()), 61);
 	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
 
 
 	int batch = 10;
 	int pass = 1000;
+	double lr = 0.001;
 
 	if(contain(res, "pass")){
 		pass = std::stoi(res["pass"]);
@@ -74,11 +78,16 @@ int main(int argc, char *argv[])
 		batch = std::stoi(res["batch"]);
 	}
 
-	printf("Parameters startup: pass=%d, batch=%d\n", pass, batch);
+	if(contain(res, "lr")){
+		lr = std::stod(res["lr"]);
+	}
+
+	printf("Parameters startup: pass=%d, batch=%d, lr=%f\n", pass, batch, lr);
 
 	if(contain(res, "gpu")){
 		ImNetSmplGpu imnetSmpl;
 		imnetSmpl.setReader(&ir);
+		imnetSmpl.setLearningRate(lr);
 
 		if(contain(res, "load")){
 			imnetSmpl.load_net(res["load"].c_str());
@@ -100,8 +109,8 @@ int main(int argc, char *argv[])
 		imnetSmpl.doPass(pass, batch);
 	}else{
 		ImNetSmpl imnetSmpl;
-
 		imnetSmpl.setReader(&ir);
+		imnetSmpl.setLearningRate(lr);
 
 		if(contain(res, "load")){
 			imnetSmpl.load_net(res["load"].c_str());

@@ -99,25 +99,130 @@ void write_gmat(const std::string &name, const GpuMat &mat)
 
 ///////////////////////////////
 
-AdamOptimizer::AdamOptimizer()
+
+Optimizer::Optimizer()
 {
 	m_alpha = 0.001;
-	m_betha1 = 0.9;
-	m_betha2 = 0.99;
 	m_iteration = 1;
-	m_init_matB = false;
-	m_init_singleB = false;
 }
 
-double AdamOptimizer::alpha() const
+Optimizer::~Optimizer()
+{
+
+}
+
+double Optimizer::alpha() const
 {
 	return m_alpha;
 }
 
-void AdamOptimizer::setAlpha(double v)
+void Optimizer::setAlpha(double v)
 {
 	m_alpha = v;
 }
+
+uint32_t Optimizer::iteration() const
+{
+	return m_iteration;
+}
+
+bool Optimizer::init(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB)
+{
+	return false;
+}
+
+bool Optimizer::pass(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB, std::vector<GpuMat> &W, std::vector<GpuMat> &b)
+{
+
+}
+
+///////////////////////////////
+
+StohasticGradientOptimizer::StohasticGradientOptimizer(): Optimizer()
+{
+
+}
+
+bool StohasticGradientOptimizer::init(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB)
+{
+	return true;
+}
+
+bool StohasticGradientOptimizer::pass(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB, std::vector<GpuMat> &W, std::vector<GpuMat> &b)
+{
+	if(gradW.empty() || gradB.empty() || W.empty() || b.empty() ||
+			gradW.size() != W.size() || b.size() != gradB.size()){
+		return false;
+	}
+
+	for(size_t i = 0; i < W.size(); ++i){
+		gpumat::sub(W[i], gradW[i], 1., m_alpha);
+		gpumat::sub(b[i], gradB[i], 1., m_alpha);
+	}
+}
+
+///////////////////////////////
+
+
+MomentumOptimizer::MomentumOptimizer(): Optimizer()
+{
+	m_betha = 0.9;
+}
+
+double MomentumOptimizer::betha() const
+{
+	return m_betha;
+}
+
+void MomentumOptimizer::setBetha(double b)
+{
+	m_betha = b;
+}
+
+bool MomentumOptimizer::init(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB)
+{
+	m_iteration = 0;
+
+	m_mW.resize(gradW.size());
+	m_mb.resize(gradW.size());
+
+	for(size_t i = 0; i < gradW.size(); i++){
+		m_mW[i].resize(gradW[i]);
+		m_mb[i].resize(gradB[i]);
+
+		m_mW[i].zeros();
+		m_mb[i].zeros();
+	}
+	return true;
+}
+
+bool MomentumOptimizer::pass(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB, std::vector<GpuMat> &W, std::vector<GpuMat> &b)
+{
+	if(gradW.empty() || gradB.empty() || W.empty() || b.empty())
+		return false;
+
+	for(size_t i = 0; i < gradW.size(); ++i){
+
+		gpumat::add(m_mW[i], gradW[i], m_betha, (1. - m_betha));
+		gpumat::add(m_mb[i], gradB[i], m_betha, (1. - m_betha));
+
+		gpumat::sub(W[i], m_mW[i], 1., m_alpha);
+		gpumat::sub(b[i], m_mb[i], 1., m_alpha);
+	}
+	return true;
+
+}
+
+///////////////////////////////
+
+AdamOptimizer::AdamOptimizer(): Optimizer()
+{
+	m_betha1 = 0.9;
+	m_betha2 = 0.99;
+	m_init_matB = false;
+	m_init_singleB = false;
+}
+
 
 double AdamOptimizer::betha1() const
 {
@@ -138,10 +243,6 @@ void AdamOptimizer::setBetha2(double v)
 	m_betha2 = v;
 }
 
-uint32_t AdamOptimizer::iteration() const
-{
-	return m_iteration;
-}
 
 bool AdamOptimizer::empty() const
 {

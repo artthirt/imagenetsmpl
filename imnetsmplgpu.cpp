@@ -2,10 +2,13 @@
 
 #include <QDir>
 #include <QFile>
-#include <QDebug>
+
+const int cnv_size = 4;
+const int mlp_size = 3;
 
 ImNetSmplGpu::ImNetSmplGpu()
 {
+	m_learningRate =0.001;
 	m_init = false;
 	m_check_count = 200;
 	m_classes = 1000;
@@ -17,33 +20,45 @@ void ImNetSmplGpu::setReader(ImReader *ir)
 	m_reader = ir;
 }
 
+void ImNetSmplGpu::setLearningRate(double lr)
+{
+	m_learningRate = lr;
+}
+
 void ImNetSmplGpu::init()
 {
 	int W = ImReader::IM_WIDTH, H = ImReader::IM_HEIGHT;
 
-	m_conv.resize(5);
+	m_conv.resize(cnv_size);
+	m_sg.resize(m_conv.size());
 
-	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7), false);
+//	for(size_t i = 0; i < m_conv.size(); ++i){
+//		m_conv[i].setOptimizer(&m_sg[i]);
+//	}
+
+	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7));
 	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3));
 	m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3));
-	m_conv[3].init(m_conv[2].szOut(), 256, 1, 512, ct::Size(3, 3));
-	m_conv[4].init(m_conv[3].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
+	m_conv[3].init(m_conv[2].szOut(), 256, 1, 1024, ct::Size(3, 3), false);
+//	m_conv[4].init(m_conv[3].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
+//	m_conv[5].init(m_conv[4].szOut(), 1024, 1, 1024, ct::Size(3, 3));
+//	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
 
-	qDebug("Out=[%dx%dx%d]", m_conv[4].szOut().width, m_conv[4].szOut().height, m_conv[4].K);
+	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
-	int outFeatures = m_conv[4].outputFeatures();
+	int outFeatures = m_conv.back().outputFeatures();
 
-	m_mlp.resize(3);
+	m_mlp.resize(mlp_size);
 
 	m_mlp[0].init(outFeatures, 4096, gpumat::GPU_FLOAT);
 	m_mlp[1].init(4096, 2048, gpumat::GPU_FLOAT);
 	m_mlp[2].init(2048, m_classes, gpumat::GPU_FLOAT);
 
 	m_optim.init(m_mlp);
-	m_optim.setAlpha(0.0001f);
+	m_optim.setAlpha(m_learningRate);
 
 	for(int i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setAlpha(0.0001);
+		m_conv[i].setAlpha(m_learningRate);
 	}
 
 	m_init = true;
@@ -70,6 +85,8 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 	gpumat::GpuMat gy, *gy_, gD;
 
 	for(int i = 0; i < pass; ++i){
+		std::cout << "pass " << i << "\r" << std::flush;
+
 		std::vector< ct::Matf > X;
 		ct::Matf y;
 
@@ -78,6 +95,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 		get_gX(X, gX);
 		gpumat::convert_to_gpu(y, gy);
 
+//		std::cout << "pass " << i << "\r";
 //		qDebug("--> pass %d", i);
 		forward(gX, &gy_);
 
@@ -88,7 +106,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 //		printf("--> backward\r");
 		backward(gD);
 
-		if((i % 40) == 0){
+		if((i % 80) == 0){
 			std::vector< ct::Matf > X;
 			ct::Matf y, p;
 
@@ -109,9 +127,9 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 				pr += check(y, p);
 			}
 			if(!idx)idx = 1;
-			qDebug("pass %d: loss=%f;\tpred=%f", i, ls / idx, pr / idx);
+			printf("pass %d: loss=%f;\tpred=%f\n", i, ls / idx, pr / idx);
 		}
-		if((i % 40) == 0){
+		if((i % 80) == 0){
 			save_net(m_model);
 		}
 	}
@@ -120,42 +138,44 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat **pyOut)
 {
 	m_conv[0].forward(&X, gpumat::RELU);
-	m_conv[1].forward(&m_conv[0].XOut(), gpumat::RELU);
-	m_conv[2].forward(&m_conv[1].XOut(), gpumat::RELU);
-	m_conv[3].forward(&m_conv[2].XOut(), gpumat::RELU);
-	m_conv[4].forward(&m_conv[3].XOut(), gpumat::RELU);
+	for(size_t i = 1; i < m_conv.size(); ++i){
+		m_conv[i].forward(&m_conv[i - 1].XOut(), gpumat::RELU);
+	}
 
-	gpumat::conv2::vec2mat(m_conv[4].XOut(), m_A1);
+	gpumat::conv2::vec2mat(m_conv.back().XOut(), m_A1);
 
 	m_mlp[0].forward(&m_A1);
 	m_mlp[1].forward(&m_mlp[0].A1);
 	m_mlp[2].forward(&m_mlp[1].A1, gpumat::SOFTMAX);
 
-	*pyOut = &m_mlp[2].A1;
+	*pyOut = &m_mlp.back().A1;
 
 }
 
 void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 {
-	if(m_mlp.empty() || m_mlp[1].A1.empty())
+	if(m_mlp.empty() || m_mlp.back().A1.empty())
 		return;
 
-	m_mlp[2].backward(Delta);
+	m_mlp.back().backward(Delta);
 	m_mlp[1].backward(m_mlp[2].DltA0);
 	m_mlp[0].backward(m_mlp[1].DltA0);
 
-	gpumat::conv2::mat2vec(m_mlp[0].DltA0, m_conv[4].szK, m_deltas);
+	gpumat::conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, m_deltas);
 
 //	printf("-cnv4        \r");
-	m_conv[4].backward(m_deltas);
-//	printf("-cnv3        \r");
-	m_conv[3].backward(m_conv[4].Dlt);
-//	printf("-cnv2        \r");
-	m_conv[2].backward(m_conv[3].Dlt);
-//	printf("-cnv1        \r");
-	m_conv[1].backward(m_conv[2].Dlt);
-//	printf("-cnv0        \r\n");
-	m_conv[0].backward(m_conv[1].Dlt, true);
+	m_conv.back().backward(m_deltas);
+
+	for(int i = m_conv.size() - 2; i >= 0; i--){
+	//	printf("-cnv3        \r");
+		m_conv[i].backward(m_conv[i + 1].Dlt, i == 0);
+	//	printf("-cnv2        \r");
+//		m_conv[2].backward(m_conv[3].Dlt);
+//	//	printf("-cnv1        \r");
+//		m_conv[1].backward(m_conv[2].Dlt);
+//	//	printf("-cnv0        \r\n");
+//		m_conv[0].backward(m_conv[1].Dlt, true);
+	}
 
 	m_optim.pass(m_mlp);
 }
@@ -206,7 +226,7 @@ ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
 void ImNetSmplGpu::predicts(const QString &sdir)
 {
 	QString n = QDir::fromNativeSeparators(sdir);
-	qDebug() << n;
+	std::cout << n.toLatin1().data() << std::endl;
 
 	QDir dir(n);
 	QStringList sl;
@@ -253,7 +273,7 @@ void ImNetSmplGpu::save_net(const QString &name)
 	fs.open(n.toStdString(), std::ios_base::out | std::ios_base::binary);
 
 	if(!fs.is_open()){
-		qDebug("File %s not open", n.toLatin1().data());
+		printf("File %s not open\n", n.toLatin1().data());
 		return;
 	}
 
@@ -283,7 +303,7 @@ void ImNetSmplGpu::load_net(const QString &name)
 	fs.open(n.toStdString(), std::ios_base::in | std::ios_base::binary);
 
 	if(!fs.is_open()){
-		qDebug("File %s not open", n.toLatin1().data());
+		printf("File %s not open\n", n.toLatin1().data());
 		return;
 	}
 

@@ -12,6 +12,7 @@ public:
 	ImNetSmpl();
 
 	void setReader(ImReader* ir);
+	void setLearningRate(double lr);
 
 	void init();
 	void doPass(int pass, int batch);
@@ -30,6 +31,8 @@ public:
 
 private:
 	ImReader *m_reader;
+	double m_learningRate;
+
 
 	std::vector< conv2::convnn<float> > m_conv;
 	std::vector< ct::mlp<float> > m_mlp;

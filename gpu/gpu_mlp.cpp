@@ -198,10 +198,10 @@ void mlp::read(std::fstream &fs)
 
 ///**************************
 
-void MlpOptim::init(const std::vector<mlp> &_mlp)
+bool MlpOptim::init(const std::vector<mlp> &_mlp)
 {
 	if(_mlp.empty())
-		return;
+		return false;
 
 	m_iteration = 0;
 
@@ -227,6 +227,8 @@ void MlpOptim::init(const std::vector<mlp> &_mlp)
 		m_vb[i].zeros();
 	}
 	m_init_matB = true;
+
+	return true;
 }
 
 bool MlpOptim::pass(std::vector<mlp> &_mlp)
@@ -311,4 +313,69 @@ void gpumat::maxnorm(GpuMat &A, double c)
 			break;
 		}
 	}
+}
+
+//////////////////////////////////////////////////////
+
+bool MlpOptimSG::init(const std::vector<mlp> &_mlp)
+{
+	if(_mlp.empty())
+		return false;
+
+	return true;
+}
+
+bool MlpOptimSG::pass(std::vector<mlp> &_mlp)
+{
+	m_iteration++;
+	for(size_t i = 0; i < _mlp.size(); ++i){
+		mlp& mlpi = _mlp[i];
+		gpumat::sub(mlpi.W, mlpi.gW, 1., m_alpha);
+		gpumat::sub(mlpi.B, mlpi.gB, 1., m_alpha);
+
+	}
+}
+
+//////////////////////////////////////////////////
+
+bool MlpOptimMoment::init(const std::vector<mlp> &_mlp)
+{
+	if(_mlp.empty())
+		return false;
+
+	m_iteration = 0;
+
+	m_mW.resize(_mlp.size());
+	m_mb.resize(_mlp.size());
+
+	for(size_t i = 0; i < _mlp.size(); i++){
+		const gpumat::mlp& _mlpi = _mlp[i];
+		m_mW[i].resize(_mlpi.W);
+		m_mW[i].zeros();
+
+		m_mb[i].resize(_mlpi.B);
+		m_mb[i].zeros();
+	}
+
+	return true;
+
+}
+
+bool MlpOptimMoment::pass(std::vector<mlp> &_mlp)
+{
+	if(_mlp.empty())
+		return false;
+
+	m_iteration++;
+	for(size_t i = 0; i < _mlp.size(); ++i){
+		mlp& mlpi = _mlp[i];
+
+		gpumat::add(m_mW[i], mlpi.gW, m_betha, (1. - m_betha));
+		gpumat::add(m_mb[i], mlpi.gB, m_betha, (1. - m_betha));
+
+		gpumat::sub(mlpi.W, m_mW[i], 1., m_alpha);
+		gpumat::sub(mlpi.B, m_mb[i], 1., m_alpha);
+	}
+	return true;
+
 }

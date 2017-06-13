@@ -14,6 +14,7 @@ public:
 	ImNetSmplGpu();
 
 	void setReader(ImReader* ir);
+	void setLearningRate(double lr);
 
 	void init();
 	void doPass(int pass, int batch);
@@ -32,12 +33,15 @@ public:
 
 private:
 	ImReader *m_reader;
+	double m_learningRate;
 
 	std::vector< gpumat::conv2::convnn_gpu > m_conv;
 	std::vector< gpumat::mlp > m_mlp;
 	int m_classes;
 	gpumat::GpuMat m_A1;
 	gpumat::MlpOptim m_optim;
+	std::vector< gpumat::StohasticGradientOptimizer > m_sg;
+	std::vector< gpumat::MomentumOptimizer > m_mg;
 	std::vector< gpumat::GpuMat > m_deltas;
 
 	int m_check_count;

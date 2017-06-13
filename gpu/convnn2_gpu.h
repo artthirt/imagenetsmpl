@@ -30,7 +30,7 @@ public:
 	std::vector< gpumat::GpuMat > vgW;		/// for delta weights
 	std::vector< gpumat::GpuMat > vgB;		/// for delta bias
 	std::vector< gpumat::GpuMat > Mask;		/// masks for bakward pass (created in forward pass)
-	gpumat::AdamOptimizer m_optim;
+	gpumat::Optimizer *m_optim;
 
 	std::vector< gpumat::GpuMat > gW;		/// gradient for weights
 	std::vector< gpumat::GpuMat > gB;		/// gradient for biases
@@ -39,6 +39,8 @@ public:
 	double m_prob_dropout;
 
 	convnn_gpu();
+
+	void setOptimizer(Optimizer* optim);
 
 	void setAlpha(double val);
 	void setLambda(double val);
@@ -82,6 +84,8 @@ private:
 	gpumat::etypefunction m_func;
 	gpumat::GpuMat m_Dropout;
 	double m_lambda;
+
+	gpumat::AdamOptimizer m_innet_optim;
 
 	std::vector< gpumat::GpuMat > dSub2;
 	std::vector< gpumat::GpuMat > Dc;		///

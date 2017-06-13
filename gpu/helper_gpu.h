@@ -61,13 +61,67 @@ void read_fs(std::fstream &fs, gpumat::GpuMat& mat);
 
 /////////////////////////////////////////
 
-class AdamOptimizer{
+class Optimizer{
 public:
-	AdamOptimizer();
+	Optimizer();
+	virtual ~Optimizer();
 
 	double alpha()const;
 
 	void setAlpha(double v);
+
+	uint32_t iteration() const;
+
+	virtual bool init(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB);
+	virtual bool pass(const std::vector< gpumat::GpuMat >& gradW, const std::vector< gpumat::GpuMat >& gradB,
+			  std::vector< gpumat::GpuMat >& W, std::vector< gpumat::GpuMat >& b);
+
+protected:
+	uint32_t m_iteration;
+	double m_alpha;
+
+private:
+};
+
+//////////////////////////////////////////
+
+class StohasticGradientOptimizer: public Optimizer{
+public:
+	StohasticGradientOptimizer();
+
+	virtual bool init(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB);
+	virtual bool pass(const std::vector< gpumat::GpuMat >& gradW, const std::vector< gpumat::GpuMat >& gradB,
+			  std::vector< gpumat::GpuMat >& W, std::vector< gpumat::GpuMat >& b);
+
+private:
+
+};
+
+//////////////////////////////////////////
+
+class MomentumOptimizer: public Optimizer{
+public:
+	MomentumOptimizer();
+
+	double betha() const;
+	void setBetha(double b);
+
+	virtual bool init(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB);
+	virtual bool pass(const std::vector< gpumat::GpuMat >& gradW, const std::vector< gpumat::GpuMat >& gradB,
+			  std::vector< gpumat::GpuMat >& W, std::vector< gpumat::GpuMat >& b);
+
+protected:
+	double m_betha;
+	std::vector< gpumat::GpuMat > m_mW;
+	std::vector< gpumat::GpuMat > m_mb;
+};
+
+/////////////////////////////////////////
+
+class AdamOptimizer: public Optimizer{
+public:
+	AdamOptimizer();
+
 
 	double betha1() const;
 
@@ -77,23 +131,20 @@ public:
 
 	void setBetha2(double v);
 
-	uint32_t iteration() const;
 
 	bool empty() const;
 
-	bool init(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB);
+	virtual bool init(const std::vector<GpuMat> &gradW, const std::vector<GpuMat> &gradB);
 	void init_single(const std::vector<GpuMat> &gradW);
 
-	bool pass(const std::vector< gpumat::GpuMat >& gradW, const std::vector< gpumat::GpuMat >& gradB,
+	virtual bool pass(const std::vector< gpumat::GpuMat >& gradW, const std::vector< gpumat::GpuMat >& gradB,
 			  std::vector< gpumat::GpuMat >& W, std::vector< gpumat::GpuMat >& b);
 	bool pass(const std::vector< gpumat::GpuMat >& gradW, const std::vector< float >& gradB,
 			  std::vector< gpumat::GpuMat >& W, std::vector< float >& b);
 
 protected:
-	uint32_t m_iteration;
 	double m_betha1;
 	double m_betha2;
-	double m_alpha;
 	bool m_init_matB;
 	bool m_init_singleB;
 

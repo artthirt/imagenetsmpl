@@ -11,6 +11,7 @@
 
 ImNetSmpl::ImNetSmpl()
 {
+	m_learningRate =0.001;
 	m_reader = 0;
 	m_classes = 200;
 	m_init = false;
@@ -20,6 +21,11 @@ ImNetSmpl::ImNetSmpl()
 void ImNetSmpl::setReader(ImReader *ir)
 {
 	m_reader = ir;
+}
+
+void ImNetSmpl::setLearningRate(double lr)
+{
+	m_learningRate = lr;
 }
 
 void ImNetSmpl::init()
@@ -44,10 +50,10 @@ void ImNetSmpl::init()
 	m_mlp[1].init(4096, m_classes);
 
 	m_optim.init(m_mlp);
-	m_optim.setAlpha(0.001f);
+	m_optim.setAlpha(m_learningRate);
 
 	for(int i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setAlpha(0.001f);
+		m_conv[i].setAlpha(m_learningRate);
 	}
 
 	m_init = true;

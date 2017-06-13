@@ -57,7 +57,21 @@ private:
 
 class MlpOptim: public AdamOptimizer{
 public:
-	void init(const std::vector< gpumat::mlp >& _mlp);
+	bool init(const std::vector< gpumat::mlp >& _mlp);
+	bool pass(std::vector<mlp> &_mlp);
+private:
+};
+
+class MlpOptimSG: public StohasticGradientOptimizer{
+public:
+	bool init(const std::vector< gpumat::mlp >& _mlp);
+	bool pass(std::vector<mlp> &_mlp);
+private:
+};
+
+class MlpOptimMoment: public MomentumOptimizer{
+public:
+	bool init(const std::vector< gpumat::mlp >& _mlp);
 	bool pass(std::vector<mlp> &_mlp);
 private:
 };

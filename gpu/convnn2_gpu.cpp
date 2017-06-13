@@ -68,11 +68,18 @@ convnn_gpu::convnn_gpu()
 	m_pool_dropout = false;
 	m_prob_dropout = 0.9;
 	m_lambda = 0;
+	m_optim = &m_innet_optim;
+}
+
+void convnn_gpu::setOptimizer(gpumat::Optimizer *optim)
+{
+	if(optim)
+		m_optim = optim;
 }
 
 void convnn_gpu::setAlpha(double val)
 {
-	m_optim.setAlpha(val);
+	m_optim->setAlpha(val);
 }
 
 void convnn_gpu::setLambda(double val)
@@ -166,7 +173,7 @@ void convnn_gpu::init(const ct::Size &_szA0, int _channels, int stride, int _K,
 	gW[0].resize(W[0]);
 	gB[0].resize(B[0]);
 
-	m_optim.init(W, B);
+	m_optim->init(W, B);
 }
 
 template< typename T >
@@ -437,7 +444,7 @@ void convnn_gpu::backward(const std::vector<gpumat::GpuMat> &D, bool last_level)
 		//gpumat::save_gmat(Dc[0], "Dc.txt");
 	}
 
-	m_optim.pass(gW, gB, W, B);
+	m_optim->pass(gW, gB, W, B);
 
 //	qDebug("<<<<< end backward >>>>>>");
 }
