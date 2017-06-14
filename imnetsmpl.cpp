@@ -128,7 +128,7 @@ void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut)
 //	m_conv[4].forward(&m_conv[3].XOut(), ct::RELU);
 	m_conv[0].forward(&X, ct::RELU);
 	for(size_t i = 1; i < m_conv.size(); ++i){
-		m_conv[i].forward(&m_conv[i - 1].XOut(), ct::RELU);
+		m_conv[i].forward(m_conv[i - 1], ct::RELU);
 	}
 
 	conv2::vec2mat(m_conv.back().XOut(), m_A1);

@@ -392,6 +392,11 @@ public:
 		return A1;
 	}
 
+	const std::vector< ct::Mat_<T> >& XOut() const{
+		if(m_use_pool)
+			return A2;
+		return A1;
+	}
 	/**
 	 * @brief XOut1
 	 * out after convolution
@@ -532,6 +537,10 @@ public:
 		}
 	}
 
+	void forward(const convnn<T> & conv, ct::etypefunction func){
+		forward(&conv.XOut(), func);
+	}
+
 	inline void backcnv(const std::vector< ct::Mat_<T> >& D, std::vector< ct::Mat_<T> >& DS){
 		if(D.data() != DS.data()){
 			for(size_t i = 0; i < D.size(); ++i){
@@ -662,6 +671,96 @@ private:
 	ct::etypefunction m_func;
 	bool m_use_transpose;
 	T m_Lambda;
+};
+
+template< typename T >
+class Pooling{
+	int K;									/// kernels
+	int channels;							/// input channels
+	ct::Size szA0;							/// input size
+	ct::Size szA2;							/// size after pooling
+	ct::Size szK;							/// size of output data (set in forward)
+	std::vector< ct::Mat_<T> >* pX;			/// input data
+	std::vector< ct::Mat_<T> > A2;			/// out after pooling
+	std::vector< ct::Mat_<T> > Dlt;			/// delta after backward pass
+	std::vector< ct::Mat_<T> > Mask;		/// masks for bakward pass (created in forward pass)
+	std::vector< ct::Mat_<T> > dSub;
+
+	Pooling(){
+		pX = nullptr;
+		channels = 0;
+		K = 0;
+	}
+
+	ct::Size szOut() const{
+		return szA2;
+	}
+
+	void init(const ct::Size& _szA0, int _channels, int _K){
+		K = _K;
+		channels = _channels;
+		szA0 = _szA0;
+
+		szA2 = ct::Size(szA0.width/2, szA0.height/2);
+
+		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, K);
+	}
+
+	void init(const convnn<T>& conv){
+		K = conv.K;
+		channels = conv.channels;
+		szA0 = conv.szOut();
+
+		szA2 = ct::Size(szA0.width/2, szA0.height/2);
+
+		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, K);
+	}
+
+	void forward(const std::vector< ct::Mat_<T> >* _pX){
+		if(!_pX)
+			return;
+		pX = (std::vector< ct::Mat_<T> >*)_pX;
+
+		std::vector< ct::Mat_<T> >& A1 = pX;			/// out after appl nonlinear function
+		Mask.resize(A1.size());
+		A2.resize(A1.size());
+		for(size_t i = 0; i < A1.size(); ++i){
+			ct::Mat_<T> &A1i = A1[i];
+			ct::Mat_<T> &A2i = A2[i];
+			ct::Size szOut;
+			conv2::subsample(A1i, szA1, A2i, Mask[i], szOut);
+		}
+		szK = A2[0].size();
+	}
+
+	void forward(const convnn<T> & conv){
+		pX = &conv.XOut();
+		std::vector< ct::Mat_<T> >& A1 = conv.XOut();			/// out after appl nonlinear function
+		Mask.resize(A1.size());
+		A2.resize(A1.size());
+		for(size_t i = 0; i < A1.size(); ++i){
+			ct::Mat_<T> &A1i = A1[i];
+			ct::Mat_<T> &A2i = A2[i];
+			ct::Size szOut;
+			conv2::subsample(A1i, szA1, A2i, Mask[i], szOut);
+		}
+		szK = A2[0].size();
+	}
+
+	void backward(const std::vector< ct::Mat_<T> >& D, bool last_level = false){
+		if(D.empty() || D.size() != Xc.size()){
+			throw new std::invalid_argument("vector D not complies saved parameters");
+		}
+
+		dSub.resize(D.size());
+
+		for(size_t i = 0; i < D.size(); ++i){
+			ct::Mat_<T> Di = D[i];
+			//Di.set_dims(szA2.area(), K);
+			upsample(Di, K, Mask[i], szA2, szA1, dSub[i]);
+		}
+	}
+
 };
 
 }
