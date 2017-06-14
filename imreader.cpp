@@ -169,8 +169,8 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip)
 	cv::Mat m = cv::imread(name);
 	if(m.empty())
 		return res;
-	//cv::resize(m, m, cv::Size(IM_WIDTH, IM_HEIGHT));
-	m = GetSquareImage(m, ImReader::IM_WIDTH);
+	cv::resize(m, m, cv::Size(IM_WIDTH, IM_HEIGHT));
+//	m = GetSquareImage(m, ImReader::IM_WIDTH);
 
 	if(flip){
 		cv::flip(m, m, 1);
