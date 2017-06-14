@@ -36,9 +36,10 @@ private:
 
 	std::vector< conv2::convnn<float> > m_conv;
 	std::vector< ct::mlp<float> > m_mlp;
+	std::vector< ct::MomentOptimizer<float> > m_mg;
 	int m_classes;
 	ct::Matf m_A1;
-	ct::MlpOptim<float> m_optim;
+	ct::MlpOptimMoment<float> m_optim;
 	QString m_model;
 
 	int m_check_count;

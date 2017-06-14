@@ -256,9 +256,9 @@ public:
 		}
 	}
 
-private:
+protected:
 	std::vector< ct::Mat_<T> > m_mW;
-	std::vector< T > m_mb;
+	std::vector< ct::Mat_<T> > m_mb;
 
 	T m_betha;
 };

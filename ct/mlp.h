@@ -114,16 +114,16 @@ public:
 
 		Optimizer<T>::m_iteration = 0;
 
-		Optimizer<T>::m_mW.resize(Mlp.size());
-		Optimizer<T>::m_mb.resize(Mlp.size());
+		m_mW.resize(Mlp.size());
+		m_mb.resize(Mlp.size());
 
 		for(size_t i = 0; i < Mlp.size(); i++){
 			ct::mlp<T>& _mlp = Mlp[i];
-			Optimizer<T>::m_mW[i].setSize(_mlp.W.size());
-			Optimizer<T>::m_mW[i].fill(0);
+			m_mW[i].setSize(_mlp.W.size());
+			m_mW[i].fill(0);
 
-			Optimizer<T>::m_mb[i].setSize(_mlp.B.size());
-			Optimizer<T>::m_mb[i].fill(0);
+			m_mb[i].setSize(_mlp.B.size());
+			m_mb[i].fill(0);
 		}
 		return true;
 	}
@@ -132,12 +132,29 @@ public:
 		if(Mlp.empty())
 			return false;
 
-		for(size_t i = 0; i < Mlp.size(); ++i){
+		for(int i = 0; i < m_mW.size(); ++i){
 			ct::mlp<T>& _mlp = Mlp[i];
 
-			_mlp.W -= Optimizer<T>::m_alpha * _mlp.gW;
-			_mlp.B -= Optimizer<T>::m_alpha * _mlp.gB;
+			ct::Mat_<T> tmp = m_mW[i];
+			tmp *= m_betha;
+			tmp += (1.f - m_betha) * _mlp.gW;
+			m_mW[i] = tmp;
+
+			m_mb[i] = m_betha * m_mb[i] + (1.f - m_betha) * _mlp.gB;
 		}
+		for(int i = 0; i < m_mW.size(); ++i){
+			ct::mlp<T>& _mlp = Mlp[i];
+
+			_mlp.W += ((-Optimizer<T>::m_alpha) * m_mW[i]);
+			_mlp.B += ((-Optimizer<T>::m_alpha) * m_mb[i]);
+		}
+
+//		for(size_t i = 0; i < Mlp.size(); ++i){
+//			ct::mlp<T>& _mlp = Mlp[i];
+
+//			_mlp.W -= Optimizer<T>::m_alpha * _mlp.gW;
+//			_mlp.B -= Optimizer<T>::m_alpha * _mlp.gB;
+//		}
 
 		return true;
 	}

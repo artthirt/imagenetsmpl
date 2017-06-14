@@ -66,6 +66,9 @@ int main(int argc, char *argv[])
 	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
 
 
+//	ir.get_image("d:/Down/smpl/data/imnet/n01818515/n01818515_583.JPEG", true);
+//	return 1;
+
 	int batch = 10;
 	int pass = 1000;
 	double lr = 0.001;

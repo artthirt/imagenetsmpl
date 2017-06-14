@@ -31,6 +31,36 @@ double check(const ct::Matf& classes, const ct::Matf& predicted)
 	return pred;
 }
 
+cv::Mat GetSquareImage( const cv::Mat& img, int target_width = 500 )
+{
+	int width = img.cols,
+	   height = img.rows;
+
+	cv::Mat square = cv::Mat::zeros( target_width, target_width, img.type() );
+
+	int max_dim = ( width >= height ) ? width : height;
+	float scale = ( ( float ) target_width ) / max_dim;
+	cv::Rect roi;
+	if ( width >= height )
+	{
+		roi.width = target_width;
+		roi.x = 0;
+		roi.height = height * scale;
+		roi.y = ( target_width - roi.height ) / 2;
+	}
+	else
+	{
+		roi.y = 0;
+		roi.height = target_width;
+		roi.width = width * scale;
+		roi.x = ( target_width - roi.width ) / 2;
+	}
+
+	cv::resize( img, square( roi ), roi.size() );
+
+	return square;
+}
+
 ////////////////////////
 ////////////////////////
 
@@ -139,11 +169,14 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip)
 	cv::Mat m = cv::imread(name);
 	if(m.empty())
 		return res;
-	cv::resize(m, m, cv::Size(IM_WIDTH, IM_HEIGHT));
+	//cv::resize(m, m, cv::Size(IM_WIDTH, IM_HEIGHT));
+	m = GetSquareImage(m, ImReader::IM_WIDTH);
 
 	if(flip){
 		cv::flip(m, m, 1);
 	}
+
+//	cv::imwrite("ss.bmp", m);
 
 	m.convertTo(m, CV_32F, 1./255., 0);
 
