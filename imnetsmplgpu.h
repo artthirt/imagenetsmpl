@@ -39,7 +39,7 @@ private:
 	std::vector< gpumat::mlp > m_mlp;
 	int m_classes;
 	gpumat::GpuMat m_A1;
-	gpumat::MlpOptim m_optim;
+	gpumat::MlpOptimMoment m_optim;
 	std::vector< gpumat::StohasticGradientOptimizer > m_sg;
 	std::vector< gpumat::MomentumOptimizer > m_mg;
 	std::vector< gpumat::GpuMat > m_deltas;
