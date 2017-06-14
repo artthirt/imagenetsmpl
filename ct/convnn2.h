@@ -464,6 +464,8 @@ public:
 		vW.push_back(W);
 		vB.push_back(B);
 		m_optim->init(vW, vB);
+
+		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, K);
 	}
 
 	void forward(const std::vector< ct::Mat_<T> >* _pX, ct::etypefunction func){

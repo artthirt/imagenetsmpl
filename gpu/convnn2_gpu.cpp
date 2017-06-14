@@ -173,6 +173,8 @@ void convnn_gpu::init(const ct::Size &_szA0, int _channels, int stride, int _K,
 	gW[0].resize(W[0]);
 	gB[0].resize(B[0]);
 
+	printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, K);
+
 	m_optim->init(W, B);
 }
 
