@@ -675,6 +675,7 @@ private:
 
 template< typename T >
 class Pooling{
+public:
 	int K;									/// kernels
 	int channels;							/// input channels
 	ct::Size szA0;							/// input size
@@ -733,7 +734,7 @@ class Pooling{
 		szK = A2[0].size();
 	}
 
-	void forward(const convnn<T> & conv){
+	void forward(convnn<T> & conv){
 		pX = &conv.XOut();
 		std::vector< ct::Mat_<T> >& A1 = conv.XOut();			/// out after appl nonlinear function
 		Mask.resize(A1.size());
@@ -742,7 +743,7 @@ class Pooling{
 			ct::Mat_<T> &A1i = A1[i];
 			ct::Mat_<T> &A2i = A2[i];
 			ct::Size szOut;
-			conv2::subsample(A1i, szA1, A2i, Mask[i], szOut);
+			conv2::subsample(A1i, szA0, A2i, Mask[i], szOut);
 		}
 		szK = A2[0].size();
 	}

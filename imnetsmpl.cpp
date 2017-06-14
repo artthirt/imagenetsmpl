@@ -48,6 +48,8 @@ void ImNetSmpl::init()
 	m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3), true);
 	m_conv[3].init(m_conv[2].szOut(), 256, 1, 512, ct::Size(3, 3), false);
 
+	m_pool_1.init(m_conv[1]);
+
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
 	int outFeatures = m_conv.back().outputFeatures();
@@ -130,6 +132,9 @@ void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut)
 	for(size_t i = 1; i < m_conv.size(); ++i){
 		m_conv[i].forward(m_conv[i - 1], ct::RELU);
 	}
+
+//	m_pool_1.forward(m_conv[1]);
+//	printf("pool out [%dx%dx%dx%d]\n", m_pool_1.szOut().width, m_pool_1.szOut().height, m_pool_1.szK.width, m_pool_1.szK.height);
 
 	conv2::vec2mat(m_conv.back().XOut(), m_A1);
 
