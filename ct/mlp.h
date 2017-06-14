@@ -114,16 +114,16 @@ public:
 
 		Optimizer<T>::m_iteration = 0;
 
-		m_mW.resize(Mlp.size());
-		m_mb.resize(Mlp.size());
+		MomentOptimizer<T>::m_mW.resize(Mlp.size());
+		MomentOptimizer<T>::m_mb.resize(Mlp.size());
 
 		for(size_t i = 0; i < Mlp.size(); i++){
 			ct::mlp<T>& _mlp = Mlp[i];
-			m_mW[i].setSize(_mlp.W.size());
-			m_mW[i].fill(0);
+			MomentOptimizer<T>::m_mW[i].setSize(_mlp.W.size());
+			MomentOptimizer<T>::m_mW[i].fill(0);
 
-			m_mb[i].setSize(_mlp.B.size());
-			m_mb[i].fill(0);
+			MomentOptimizer<T>::m_mb[i].setSize(_mlp.B.size());
+			MomentOptimizer<T>::m_mb[i].fill(0);
 		}
 		return true;
 	}
@@ -132,21 +132,21 @@ public:
 		if(Mlp.empty())
 			return false;
 
-		for(int i = 0; i < m_mW.size(); ++i){
+		for(int i = 0; i <MomentOptimizer<T>:: m_mW.size(); ++i){
 			ct::mlp<T>& _mlp = Mlp[i];
 
-			ct::Mat_<T> tmp = m_mW[i];
-			tmp *= m_betha;
-			tmp += (1.f - m_betha) * _mlp.gW;
-			m_mW[i] = tmp;
+			ct::Mat_<T> tmp = MomentOptimizer<T>::m_mW[i];
+			tmp *= MomentOptimizer<T>::m_betha;
+			tmp += (1.f - MomentOptimizer<T>::m_betha) * _mlp.gW;
+			MomentOptimizer<T>::m_mW[i] = tmp;
 
-			m_mb[i] = m_betha * m_mb[i] + (1.f - m_betha) * _mlp.gB;
+			MomentOptimizer<T>::m_mb[i] = MomentOptimizer<T>::m_betha * MomentOptimizer<T>::m_mb[i] + (1.f - MomentOptimizer<T>::m_betha) * _mlp.gB;
 		}
-		for(int i = 0; i < m_mW.size(); ++i){
+		for(int i = 0; i < MomentOptimizer<T>::m_mW.size(); ++i){
 			ct::mlp<T>& _mlp = Mlp[i];
 
-			_mlp.W += ((-Optimizer<T>::m_alpha) * m_mW[i]);
-			_mlp.B += ((-Optimizer<T>::m_alpha) * m_mb[i]);
+			_mlp.W += ((-Optimizer<T>::m_alpha) * MomentOptimizer<T>::m_mW[i]);
+			_mlp.B += ((-Optimizer<T>::m_alpha) * MomentOptimizer<T>::m_mb[i]);
 		}
 
 //		for(size_t i = 0; i < Mlp.size(); ++i){

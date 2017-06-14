@@ -729,7 +729,7 @@ public:
 			ct::Mat_<T> &A1i = A1[i];
 			ct::Mat_<T> &A2i = A2[i];
 			ct::Size szOut;
-			conv2::subsample(A1i, szA1, A2i, Mask[i], szOut);
+			conv2::subsample(A1i, szA0, A2i, Mask[i], szOut);
 		}
 		szK = A2[0].size();
 	}
@@ -749,7 +749,7 @@ public:
 	}
 
 	void backward(const std::vector< ct::Mat_<T> >& D, bool last_level = false){
-		if(D.empty() || D.size() != Xc.size()){
+		if(D.empty() || D.size() != pX->size()){
 			throw new std::invalid_argument("vector D not complies saved parameters");
 		}
 
@@ -758,7 +758,7 @@ public:
 		for(size_t i = 0; i < D.size(); ++i){
 			ct::Mat_<T> Di = D[i];
 			//Di.set_dims(szA2.area(), K);
-			upsample(Di, K, Mask[i], szA2, szA1, dSub[i]);
+			upsample(Di, K, Mask[i], szA2, szA0, dSub[i]);
 		}
 	}
 
