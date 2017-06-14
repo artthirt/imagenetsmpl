@@ -596,7 +596,7 @@ public:
 			ct::Mat_<T>& Wi = vgW[i];
 			ct::Mat_<T>& vgBi = vgB[i];
 			matmulT1(Xci, dSubi, Wi);
-			vgBi = (ct::sumRows(dSubi)) * (1.f/dSubi.rows);
+			vgBi = ct::sumRows(dSubi, 1.f/dSubi.rows);
 			//Wi *= (1.f/dSubi.total());
 			//vgBi.swap_dims();
 		}
