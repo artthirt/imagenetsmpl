@@ -292,7 +292,7 @@ public:
 			gW += W * (m_lambda / m);
 		}
 
-		gB = (sumRows(DA1) * (1.f / m));
+		gB = sumRows(DA1, 1.f / m);
 		gB.swap_dims();
 
 		if(!last_layer){

@@ -372,7 +372,7 @@ public:
 			}
 			matmulT1(a[i], d, dW[i]);
 			dW[i] *= (T)(1./m);
-			db[i] = (sumRows(d) * (T)(1./m)).t();
+			db[i] = (sumRows(d, (T)(1./m))).t();
 			if(i > 0)
 				d = di;
 		}

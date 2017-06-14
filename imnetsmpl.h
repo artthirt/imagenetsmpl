@@ -39,7 +39,7 @@ private:
 	std::vector< ct::MomentOptimizer<float> > m_mg;
 	int m_classes;
 	ct::Matf m_A1;
-	ct::MlpOptimMoment<float> m_optim;
+	ct::MlpOptim<float> m_optim;
 	QString m_model;
 
 	int m_check_count;
