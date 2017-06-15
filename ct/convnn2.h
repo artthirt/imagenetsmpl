@@ -345,18 +345,28 @@ void flipW(const ct::Mat_<T>& W, const ct::Size& sz,int channels, ct::Mat_<T>& W
 //-------------------------------------
 
 template< typename T >
-class convnn{
+class convnn_abstract{
 public:
-	std::vector< ct::Mat_<T> > W;			/// weights
-	std::vector< ct::Mat_<T> > B;			/// biases
 	int K;									/// kernels
 	int channels;							/// input channels
-	int stride;
+
 	ct::Size szA0;							/// input size
 	ct::Size szA1;							/// size after convolution
 	ct::Size szA2;							/// size after pooling
-	ct::Size szW;							/// size of weights
 	ct::Size szK;							/// size of output data (set in forward)
+
+	virtual std::vector< ct::Mat_<T> >& XOut() = 0;
+	virtual int outputFeatures() const = 0;
+	virtual ct::Size szOut() const = 0;
+};
+
+template< typename T >
+class convnn: public convnn_abstract<T>{
+public:
+	std::vector< ct::Mat_<T> > W;			/// weights
+	std::vector< ct::Mat_<T> > B;			/// biases
+	int stride;
+	ct::Size szW;							/// size of weights
 	std::vector< ct::Mat_<T> >* pX;			/// input data
 	std::vector< ct::Mat_<T> > Xc;			///
 	std::vector< ct::Mat_<T> > A1;			/// out after appl nonlinear function
@@ -423,19 +433,19 @@ public:
 
 	int outputFeatures() const{
 		if(m_use_pool){
-			int val = szA2.area() * K;
+			int val = convnn_abstract<T>::szA2.area() * K;
 			return val;
 		}else{
-			int val= szA1.area() * K;
+			int val= convnn_abstract<T>::szA1.area() * K;
 			return val;
 		}
 	}
 
 	ct::Size szOut() const{
 		if(m_use_pool)
-			return szA2;
+			return convnn_abstract<T>::szA2;
 		else
-			return szA1;
+			return convnn_abstract<T>::szA1;
 	}
 
 	void setAlpha(T alpha){
@@ -449,17 +459,17 @@ public:
 	void init(const ct::Size& _szA0, int _channels, int stride, int _K, const ct::Size& _szW,
 			  bool use_pool = true, bool use_transpose = true){
 		szW = _szW;
-		K = _K;
-		channels = _channels;
 		m_use_pool = use_pool;
 		m_use_transpose = use_transpose;
-		szA0 = _szA0;
+		convnn_abstract<T>::K = _K;
+		convnn_abstract<T>::channels = _channels;
+		convnn_abstract<T>::szA0 = _szA0;
 		this->stride = stride;
 
 		int rows = szW.area() * channels;
 		int cols = K;
 
-		ct::get_cnv_sizes(szA0, szW, stride, szA1, szA2);
+		ct::get_cnv_sizes(convnn_abstract<T>::szA0, szW, stride, convnn_abstract<T>::szA1, convnn_abstract<T>::szA2);
 
 		T n = (T)1./szW.area();
 
@@ -492,14 +502,14 @@ public:
 				ct::Mat_<T>& Xi = (*pX)[i];
 				ct::Size szOut;
 
-				im2colT(Xi, szA0, channels, szW, stride, Xc[i], szOut);
+				im2colT(Xi, convnn_abstract<T>::szA0, channels, szW, stride, Xc[i], szOut);
 			}
 		}else{
 			for(size_t i = 0; i < Xc.size(); ++i){
 				ct::Mat_<T>& Xi = (*pX)[i];
 				ct::Size szOut;
 
-				im2col(Xi, szA0, channels, szW, stride, Xc[i], szOut);
+				im2col(Xi, convnn_abstract<T>::szA0, channels, szW, stride, Xc[i], szOut);
 			}
 		}
 
@@ -534,11 +544,11 @@ public:
 				ct::Mat_<T> &A1i = A1[i];
 				ct::Mat_<T> &A2i = A2[i];
 				ct::Size szOut;
-				conv2::subsample(A1i, szA1, A2i, Mask[i], szOut);
+				conv2::subsample(A1i, convnn_abstract<T>::szA1, A2i, Mask[i], szOut);
 			}
-			szK = A2[0].size();
+			convnn_abstract<T>::szK = A2[0].size();
 		}else{
-			szK = A1[0].size();
+			convnn_abstract<T>::szK = A1[0].size();
 		}
 	}
 
@@ -594,7 +604,7 @@ public:
 			for(size_t i = 0; i < D.size(); ++i){
 				ct::Mat_<T> Di = D[i];
 				//Di.set_dims(szA2.area(), K);
-				upsample(Di, K, Mask[i], szA2, szA1, dSub[i]);
+				upsample(Di, K, Mask[i],convnn_abstract<T>:: szA2, convnn_abstract<T>::szA1, dSub[i]);
 			}
 			backcnv(dSub, dSub);
 		}else{
@@ -642,7 +652,7 @@ public:
 			Dc.resize(D.size());
 			for(size_t i = 0; i < D.size(); ++i){
 				ct::matmulT2(dSub[i], W[0], Dc[i]);
-				back_derivT(Dc[i], szA1, szA0, channels, szW, stride, Dlt[i]);
+				back_derivT(Dc[i], convnn_abstract<T>::szA1, convnn_abstract<T>::szA0, channels, szW, stride, Dlt[i]);
 				//ct::Size sz = (*pX)[i].size();
 				//Dlt[i].set_dims(sz);
 			}
@@ -675,18 +685,13 @@ private:
 };
 
 template< typename T >
-class Pooling{
+class Pooling: public convnn_abstract<T>{
 public:
-	int K;									/// kernels
-	int channels;							/// input channels
-	ct::Size szA0;							/// input size
-	ct::Size szA2;							/// size after pooling
-	ct::Size szK;							/// size of output data (set in forward)
 	std::vector< ct::Mat_<T> >* pX;			/// input data
 	std::vector< ct::Mat_<T> > A2;			/// out after pooling
 	std::vector< ct::Mat_<T> > Dlt;			/// delta after backward pass
 	std::vector< ct::Mat_<T> > Mask;		/// masks for bakward pass (created in forward pass)
-	std::vector< ct::Mat_<T> > dSub;
+//	std::vector< ct::Mat_<T> > dSub;
 
 	Pooling(){
 		pX = nullptr;
@@ -695,27 +700,37 @@ public:
 	}
 
 	ct::Size szOut() const{
-		return szA2;
+		return convnn_abstract<T>::szA2;
+	}
+	std::vector< ct::Mat_<T> >& XOut(){
+		return A2;
+	}
+	std::vector< ct::Mat_<T> >* pXOut(){
+		return &A2;
+	}
+	int outputFeatures() const{
+			int val = szA2.area() * K;
+			return val;
 	}
 
 	void init(const ct::Size& _szA0, int _channels, int _K){
-		K = _K;
+		convnn_abstract<T>::K = _K;
 		channels = _channels;
-		szA0 = _szA0;
+		convnn_abstract<T>::szA0 = _szA0;
 
-		szA2 = ct::Size(szA0.width/2, szA0.height/2);
+		convnn_abstract<T>::szA2 = ct::Size(szA0.width/2, szA0.height/2);
 
-		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, K);
+		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, convnn_abstract<T>::K);
 	}
 
 	void init(const convnn<T>& conv){
-		K = conv.K;
-		channels = conv.channels;
-		szA0 = conv.szOut();
+		convnn_abstract<T>::K = conv.K;
+		convnn_abstract<T>::channels = conv.channels;
+		convnn_abstract<T>::szA0 = conv.szOut();
 
-		szA2 = ct::Size(szA0.width/2, szA0.height/2);
+		convnn_abstract<T>::szA2 = ct::Size(convnn_abstract<T>::szA0.width/2, convnn_abstract<T>::szA0.height/2);
 
-		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, K);
+		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, convnn_abstract<T>::K);
 	}
 
 	void forward(const std::vector< ct::Mat_<T> >* _pX){
@@ -732,7 +747,7 @@ public:
 			ct::Size szOut;
 			conv2::subsample(A1i, szA0, A2i, Mask[i], szOut);
 		}
-		szK = A2[0].size();
+		convnn_abstract<T>::szK = A2[0].size();
 	}
 
 	void forward(convnn<T> & conv){
@@ -744,25 +759,78 @@ public:
 			ct::Mat_<T> &A1i = A1[i];
 			ct::Mat_<T> &A2i = A2[i];
 			ct::Size szOut;
-			conv2::subsample(A1i, szA0, A2i, Mask[i], szOut);
+			conv2::subsample(A1i, convnn_abstract<T>::szA0, A2i, Mask[i], szOut);
 		}
-		szK = A2[0].size();
+		convnn_abstract<T>::szK = A2[0].size();
 	}
 
-	void backward(const std::vector< ct::Mat_<T> >& D, bool last_level = false){
+	void backward(const std::vector< ct::Mat_<T> >& D){
 		if(D.empty() || D.size() != pX->size()){
 			throw new std::invalid_argument("vector D not complies saved parameters");
 		}
 
-		dSub.resize(D.size());
+		Dlt.resize(D.size());
 
 		for(size_t i = 0; i < D.size(); ++i){
 			ct::Mat_<T> Di = D[i];
 			//Di.set_dims(szA2.area(), K);
-			upsample(Di, K, Mask[i], szA2, szA0, dSub[i]);
+			upsample(Di, convnn_abstract<T>::K, Mask[i], convnn_abstract<T>::szA2, convnn_abstract<T>::szA0, Dlt[i]);
 		}
 	}
 
+};
+
+template< typename T >
+class Concat{
+public:
+	ct::Mat_<T> m_A1;
+	ct::Mat_<T> m_A2;
+	ct::Matf D1;
+	ct::Matf D2;
+	std::vector< ct::Matf > Dlt1;
+	std::vector< ct::Matf > Dlt2;
+
+	ct::Mat_<T> Y;
+
+	convnn_abstract<T>* m_c1;
+	convnn_abstract<T>* m_c2;
+
+	Concat(){
+
+	}
+
+	void forward(convnn_abstract<T>* c1, convnn_abstract<T>* c2){
+		if(!c1 || !c2)
+			return;
+
+		m_c1 = c1;
+		m_c2 = c2;
+
+		conv2::vec2mat(c1->XOut(), m_A1);
+		conv2::vec2mat(c2->XOut(), m_A2);
+
+		std::vector< ct::Matf* > concat;
+
+		concat.push_back(&m_A1);
+		concat.push_back(&m_A2);
+
+		ct::hconcat(concat, Y);
+	}
+	void backward(const ct::Mat_<T>& Dlt){
+		if(!m_c1 || !m_c2)
+			return;
+
+		std::vector< int > cols;
+		std::vector< ct::Matf* > mats;
+		cols.push_back(m_c1->outputFeatures());
+		cols.push_back(m_c2->outputFeatures());
+		mats.push_back(&D1);
+		mats.push_back(&D2);
+		ct::hsplit(Dlt, cols, mats);
+
+		conv2::mat2vec(D1, m_c1->szK, Dlt1);
+		conv2::mat2vec(D2, m_c2->szK, Dlt2);
+	}
 };
 
 }

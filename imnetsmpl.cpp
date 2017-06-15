@@ -52,7 +52,7 @@ void ImNetSmpl::init()
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
-	int outFeatures = m_conv.back().outputFeatures();
+	int outFeatures = m_conv.back().outputFeatures() + m_pool_1.outputFeatures();
 
 	m_mlp.resize(mlp_size);
 
@@ -133,14 +133,24 @@ void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut)
 		m_conv[i].forward(m_conv[i - 1], ct::RELU);
 	}
 
-//	m_pool_1.forward(m_conv[1]);
+	m_pool_1.forward(m_conv[1]);
 //	printf("pool out [%dx%dx%dx%d]\n", m_pool_1.szOut().width, m_pool_1.szOut().height, m_pool_1.szK.width, m_pool_1.szK.height);
 
-	conv2::vec2mat(m_conv.back().XOut(), m_A1);
+//	conv2::vec2mat(m_conv.back().XOut(), m_A1);
+//	conv2::vec2mat(m_pool_1.XOut(), m_A2);
+
+//	std::vector< ct::Matf* > concat;
+
+//	concat.push_back(&m_A1);
+//	concat.push_back(&m_A2);
+
+//	ct::hconcat(concat, m_Aout);
+
+	m_concat.forward(&m_conv.back(), &m_pool_1);
 
 //	m_mlp[0].forward(&m_A1);
 //	m_mlp[1].forward(&m_mlp[0].A1, ct::SOFTMAX);
-	m_mlp[0].forward(&m_A1);
+	m_mlp[0].forward(&m_concat.Y);
 	m_mlp[1].forward(&m_mlp[0].A1);
 	m_mlp[2].forward(&m_mlp[1].A1, ct::SOFTMAX);
 
@@ -156,10 +166,31 @@ void ImNetSmpl::backward(const ct::Matf &Delta)
 	m_mlp[1].backward(m_mlp[2].DltA0);
 	m_mlp[0].backward(m_mlp[1].DltA0);
 
-	conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, deltas);
+//	std::vector< int > cols;
+//	std::vector< ct::Matf* > mats;
+//	cols.push_back(m_conv.back().outputFeatures());
+//	cols.push_back(m_pool_1.outputFeatures());
+//	mats.push_back(&D1);
+//	mats.push_back(&D2);
+//	ct::hsplit(m_mlp[0].DltA0, cols, mats);
 
-	m_conv.back().backward(deltas);
+//	conv2::mat2vec(D1, m_conv.back().szK, deltas1);
+//	conv2::mat2vec(D2, m_pool_1.szK, deltas2);
+
+	m_concat.backward(m_mlp[0].DltA0);
+
+	m_pool_1.backward(m_concat.Dlt2);
+
+	m_conv.back().backward(m_concat.Dlt1);
 	for(int i = m_conv.size() - 2; i >= 0; i--){
+		if(i == 1){
+			conv2::convnn<float>& conv = m_conv[i + 1];
+			if(m_pool_1.Dlt.size()){
+				for(size_t i = 0; i < m_pool_1.Dlt.size(); ++i){
+					conv.Dlt[i] += m_pool_1.Dlt[i];
+				}
+			}
+		}
 		m_conv[i].backward(m_conv[i + 1].Dlt, i == 0);
 	}
 

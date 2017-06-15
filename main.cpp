@@ -5,6 +5,8 @@
 #include "imreader.h"
 #include <map>
 
+#include "nn.h"
+
 bool contain(const std::map<std::string, std::string>& mp, const std::string& key)
 {
 	return mp.find(key) != mp.end();
@@ -43,9 +45,45 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 	return res;
 }
 
+void test()
+{
+	ct::Matf res, a1, a2, a3, b1, b2, b3;
+
+	a1.setSize(10, 13);
+	a1.fill(1);
+	a2.setSize(10, 15);
+	a2.fill(3);
+	a3 = ct::Matf::eye(10, 14);
+
+	std::vector< ct::Matf* > mats, mats1;
+	mats.push_back(&a1);
+	mats.push_back(&a2);
+	mats.push_back(&a3);
+	ct::hconcat(mats, res);
+
+	std::cout << res.print() << std::endl;
+
+	std::vector< int > cols;
+	cols.push_back(13);
+	cols.push_back(15);
+	cols.push_back(14);
+
+	mats1.push_back(&b1);
+	mats1.push_back(&b2);
+	mats1.push_back(&b3);
+
+	ct::hsplit(res, cols, mats1);
+
+	std::cout << "b1\n" << b1.print() << std::endl;
+	std::cout << "b2\n" << b2.print() << std::endl;
+	std::cout << "b3\n" << b3.print() << std::endl;
+}
+
 int main(int argc, char *argv[])
 {
 	std::map<std::string, std::string> res = parseArgs(argc, argv);
+
+//	test();
 
 	if(res.empty()){
 		printf("Usage: app [OPTIONS]\n"

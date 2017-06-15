@@ -36,10 +36,16 @@ private:
 	std::vector< conv2::convnn<float> > m_conv;
 	std::vector< ct::mlp<float> > m_mlp;
 	conv2::Pooling<float> m_pool_1;
+	conv2::Concat<float> m_concat;
 	std::vector< ct::MomentOptimizer<float> > m_mg;
 	int m_classes;
-	ct::Matf m_A1;
-	std::vector< ct::Matf > deltas;
+//	ct::Matf m_A1;
+//	ct::Matf m_A2;
+//	ct::Matf m_Aout;
+//	ct::Matf D1;
+//	ct::Matf D2;
+//	std::vector< ct::Matf > deltas1;
+//	std::vector< ct::Matf > deltas2;
 	ct::MlpOptimMoment<float> m_optim;
 	QString m_model;
 

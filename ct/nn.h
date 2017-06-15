@@ -770,6 +770,53 @@ void hconcat(const std::vector< ct::Mat_<T> >& list, ct::Mat_<T>& res)
 }
 
 /**
+ * @brief hconcat
+ * @param list
+ * @param res
+ */
+template< typename T >
+void hconcat(const std::vector< ct::Mat_<T>* >& list, ct::Mat_<T>& res)
+{
+	if(list.empty())
+		return;
+	int rows		= list[0]->rows;
+	int cols		= 0;
+
+	std::vector< int > cumoffset;
+	cumoffset.resize(list.size());
+	for(size_t i = 0; i < list.size(); ++i){
+		cumoffset[i] = cols;
+		cols += list[i]->cols;
+	}
+
+	if(!cols)
+		return;
+
+	res.setSize(rows, cols);
+
+	T *dR = res.ptr();
+
+//#pragma omp parallel for
+	for(int i = 0; i < rows; ++i){
+
+//#pragma omp parallel for
+		for(int j = 0; j < (int)list.size(); ++j){
+			T* dL = list[j]->ptr();
+			int lcols = list[j]->cols;
+			int cumoff = cumoffset[j];
+
+#ifdef __GNUC__
+#pragma omp simd
+#endif
+			for(int k = 0; k < lcols; ++k){
+				dR[i * cols + cumoff + k] = dL[i * lcols + k];
+			}
+		}
+	}
+}
+
+
+/**
  * @brief hsplit
  * @param res
  * @param cols
@@ -801,6 +848,51 @@ void hsplit(const ct::Mat_<T>& res, size_t cols, std::vector< ct::Mat_<T> >& lis
 		for(int j = 0; j < res.rows; ++j){
 			for(size_t k = 0; k < len; ++k){
 				dLi[j * len + k] = dR[j * res.cols + i * len + k];
+			}
+		}
+	}
+}
+
+/**
+ * @brief hsplit
+ * @param res
+ * @param cols
+ * @param list
+ */
+template< typename T >
+void hsplit(const ct::Mat_<T>& res, std::vector< int > cols, std::vector< ct::Mat_<T>* >& list)
+{
+	if(res.empty() || list.empty() || list.size() != cols.size())
+		throw new std::invalid_argument("hsplit: wrong parameters");
+
+	std::vector< int > cumoffset;
+	cumoffset.resize(cols.size());
+	int cs = 0;
+	for(size_t i = 0; i < cols.size(); ++i){
+		cumoffset[i] = cs;
+		cs += cols[i];
+	}
+
+	for(size_t i = 0; i < cols.size(); ++i){
+		if(!list[i])
+			throw new std::invalid_argument("hsplit: null matrix in list");
+		list[i]->setSize(res.rows, cols[i]);
+	}
+
+	T *dR = res.ptr();
+#pragma omp parallel for
+	for(int i = 0; i < (int)cols.size(); ++i){
+		T *dLi = list[i]->ptr();
+		int col = cols[i];
+		int offset = cumoffset[i];
+#ifdef __GNUC__
+#pragma omp simd
+#else
+#pragma omp parallel for
+#endif
+		for(int j = 0; j < res.rows; ++j){
+			for(size_t k = 0; k < cols[i]; ++k){
+				dLi[j * col + k] = dR[j * res.cols + offset + k];
 			}
 		}
 	}
