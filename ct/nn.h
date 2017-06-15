@@ -796,7 +796,7 @@ void hconcat(const std::vector< ct::Mat_<T>* >& list, ct::Mat_<T>& res)
 
 	T *dR = res.ptr();
 
-//#pragma omp parallel for
+#pragma omp parallel for
 	for(int i = 0; i < rows; ++i){
 
 //#pragma omp parallel for
@@ -880,7 +880,7 @@ void hsplit(const ct::Mat_<T>& res, std::vector< int > cols, std::vector< ct::Ma
 	}
 
 	T *dR = res.ptr();
-#pragma omp parallel for
+//#pragma omp parallel for
 	for(int i = 0; i < (int)cols.size(); ++i){
 		T *dLi = list[i]->ptr();
 		int col = cols[i];

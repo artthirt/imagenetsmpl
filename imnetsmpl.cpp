@@ -39,9 +39,9 @@ void ImNetSmpl::init()
 	m_conv.resize(cnv_size);
 	m_mg.resize(cnv_size);
 
-	for(size_t i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setOptimizer(&m_mg[i]);
-	}
+//	for(size_t i = 0; i < m_conv.size(); ++i){
+//		m_conv[i].setOptimizer(&m_mg[i]);
+//	}
 
 	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7), true, false);
 	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3), true);

@@ -46,7 +46,7 @@ private:
 //	ct::Matf D2;
 //	std::vector< ct::Matf > deltas1;
 //	std::vector< ct::Matf > deltas2;
-	ct::MlpOptimMoment<float> m_optim;
+	ct::MlpOptim<float> m_optim;
 	QString m_model;
 
 	int m_check_count;
