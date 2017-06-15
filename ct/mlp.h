@@ -215,16 +215,16 @@ public:
 		switch (func) {
 			default:
 			case RELU:
-				A = relu(Z);
+				v_relu(Z, A);
 				break;
 			case SOFTMAX:
-				A = softmax(Z, 1);
+				v_softmax(Z, A, 1);
 				break;
 			case SIGMOID:
-				A = sigmoid(Z);
+				v_sigmoid(Z, A);
 				break;
 			case TANH:
-				A = tanh(Z);
+				v_tanh(Z, A);
 				break;
 		}
 	}
@@ -261,9 +261,9 @@ public:
 		if(m_is_dropout && std::abs(m_prob - 1) > 1e-6){
 			ct::dropout(pA0->rows, pA0->cols, m_prob, Dropout);
 			elemwiseMult(*pA0, Dropout, XDropout);
-			Z = XDropout * W;
+			ct::matmul(XDropout, W, Z);
 		}else{
-			Z = *pA0 * W;
+			ct::matmul(*pA0, W, Z);
 		}
 
 		Z.biasPlus(B);
@@ -292,7 +292,7 @@ public:
 			gW += W * (m_lambda / m);
 		}
 
-		gB = sumRows(DA1, 1.f / m);
+		v_sumRows(DA1, gB, 1.f / m);
 		gB.swap_dims();
 
 		if(!last_layer){

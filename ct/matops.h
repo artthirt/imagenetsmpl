@@ -426,6 +426,35 @@ inline Mat_<T> sumRows(const Mat_<T > &m, T alpha = 1.)
 }
 
 /**
+ * @brief v_sumRows
+ * @param m
+ * @param res
+ * @param alpha
+ */
+template< typename T >
+inline void v_sumRows(const Mat_<T > &m, Mat_<T>& res, T alpha = 1.)
+{
+	if(m.rows == 0 || m.cols == 0)
+		return;
+	res.setSize(1, m.cols);
+	res.fill(0);
+
+	T* res_val = &(*res.val)[0];
+	T* m_val = &(*m.val)[0];
+
+#pragma omp parallel for
+	for(int i = 0; i < m.rows; i++){
+#ifdef __GNUC__
+#pragma omp simd
+#else
+//#pragma omp parallel for
+#endif
+		for(int j = 0; j < m.cols; j++)
+			res_val[j] += m_val[i * m.cols + j] * alpha;
+	}
+}
+
+/**
  * @brief exp
  * @param m
  * @return exp(m)
@@ -553,9 +582,10 @@ void v_sigmoid(Mat_<T>& m)
 /**
  * @brief v_sigmoid
  * @param m
+ * @param r - return matrix
  */
 template< typename T >
-void v_sigmoid(Mat_<T>& m, Mat_<T>& r)
+void v_sigmoid(const Mat_<T>& m, Mat_<T>& r)
 {
 	r.setSize(m.size());
 	T* m_val = m.ptr();
@@ -673,9 +703,10 @@ void v_tanh(Mat_<T>& m)
 /**
  * @brief v_tanh
  * @param m
+ * @param r - return matrix
  */
 template< typename T >
-void v_tanh(Mat_<T>& m, Mat_<T>& r)
+void v_tanh(const Mat_<T>& m, Mat_<T>& r)
 {
 	r.setSize(m.size());
 	T* m_val = m.ptr();
@@ -1184,6 +1215,35 @@ inline Mat_<T> softmax(const Mat_<T>& m, int axis = 0)
 	}
 
 	return res;
+}
+
+/**
+ * @brief v_softmax
+ * @param m
+ * @param res = softmax(m)
+ */
+template< typename T >
+inline void v_softmax(const Mat_<T>& m, Mat_<T>& res, int axis = 0)
+{
+	res.setSize(m.rows, m.cols);
+
+	Mat_<T> Max;
+//#pragma omp parallel for
+
+	if(axis == 0){
+		math::max_rows<T>(m, Max);
+		math::exp_rows<T>(m, Max, res);
+		math::sum_rows<T>(res, Max);
+		math::sub_ln_rows<T>(res, Max);
+		math::_exp(res);
+	}else
+	if(axis == 1){
+		math::max_cols<T>(m, Max);
+		math::exp_cols<T>(m, Max, res);
+		math::sum_cols<T>(res, Max);
+		math::sub_ln_cols<T>(res, Max);
+		math::_exp(res);
+	}
 }
 
 /**
