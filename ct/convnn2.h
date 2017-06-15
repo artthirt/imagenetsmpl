@@ -347,8 +347,8 @@ void flipW(const ct::Mat_<T>& W, const ct::Size& sz,int channels, ct::Mat_<T>& W
 template< typename T >
 class convnn{
 public:
-	ct::Mat_<T> W;							/// weights
-	ct::Mat_<T> B;							/// biases
+	std::vector< ct::Mat_<T> > W;			/// weights
+	std::vector< ct::Mat_<T> > B;			/// biases
 	int K;									/// kernels
 	int channels;							/// input channels
 	int stride;
@@ -368,8 +368,11 @@ public:
 	ct::Optimizer< T > *m_optim;
 	ct::AdamOptimizer<T> m_adam;
 
-	ct::Mat_<T> gW;							/// gradient for weights
-	ct::Mat_<T> gB;							/// gradient for biases
+	std::vector< ct::Mat_<T> > gW;			/// gradient for weights
+	std::vector< ct::Mat_<T> > gB;			/// gradient for biases
+
+	std::vector< ct::Mat_<T> > dSub;
+	std::vector< ct::Mat_<T> > Dc;
 
 	convnn(){
 		m_use_pool = false;
@@ -460,15 +463,17 @@ public:
 
 		T n = (T)1./szW.area();
 
-		W.setSize(rows, cols);
-		W.randn(0, n);
-		B.setSize(1, K);
-		B.randn(0, n);
+		W.resize(1);
+		B.resize(1);
+		gW.resize(1);
+		gB.resize(1);
 
-		std::vector< ct::Mat_<T> > vW, vB;
-		vW.push_back(W);
-		vB.push_back(B);
-		m_optim->init(vW, vB);
+		W[0].setSize(rows, cols);
+		W[0].randn(0, n);
+		B[0].setSize(1, K);
+		B[0].randn(0, n);
+
+		m_optim->init(W, B);
 
 		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, K);
 	}
@@ -502,8 +507,8 @@ public:
 		for(size_t i = 0; i < Xc.size(); ++i){
 			ct::Mat_<T>& Xi = Xc[i];
 			ct::Mat_<T>& A1i = A1[i];
-			A1i = Xi * W;
-			A1i.biasPlus(B);
+			ct::matmul(Xi, W[0], A1i);
+			A1i.biasPlus(B[0]);
 		}
 
 		for(size_t i = 0; i < A1.size(); ++i){
@@ -582,7 +587,6 @@ public:
 			throw new std::invalid_argument("vector D not complies saved parameters");
 		}
 
-		std::vector< ct::Mat_<T> > dSub;
 		dSub.resize(D.size());
 
 		//printf("1\n");
@@ -612,20 +616,20 @@ public:
 			//vgBi.swap_dims();
 		}
 		//printf("3\n");
-		gW.setSize(W.size());
-		gW.fill(0);
-		gB.setSize(B.size());
-		gB.fill(0);
+		gW[0].setSize(W[0].size());
+		gW[0].fill(0);
+		gB[0].setSize(B[0].size());
+		gB[0].fill(0);
 		for(size_t i = 0; i < D.size(); ++i){
-			gW += vgW[i];
-			gB += vgB[i];
+			ct::add(gW[0], vgW[i]);
+			ct::add(gB[0], vgB[i]);
 		}
-		gW *= (T)1./(D.size());
-		gB *= (T)1./(D.size());
+		gW[0] *= (T)1./(D.size());
+		gB[0] *= (T)1./(D.size());
 
 		//printf("4\n");
 		if(m_Lambda > 0){
-			gW += W * (m_Lambda / K);
+			ct::add<float>(gW[0],  W[0], 1., (m_Lambda / K));
 		}
 
 		//printf("5\n");
@@ -635,35 +639,32 @@ public:
 			//ct::Mat_<T> Wf;
 			//flipW(W, szW, channels, Wf);
 
+			Dc.resize(D.size());
 			for(size_t i = 0; i < D.size(); ++i){
-				ct::Mat_<T> Dc;
-				ct::matmulT2(dSub[i], W, Dc);
-				back_derivT(Dc, szA1, szA0, channels, szW, stride, Dlt[i]);
+				ct::matmulT2(dSub[i], W[0], Dc[i]);
+				back_derivT(Dc[i], szA1, szA0, channels, szW, stride, Dlt[i]);
 				//ct::Size sz = (*pX)[i].size();
 				//Dlt[i].set_dims(sz);
 			}
 		}
 
 		//printf("6\n");
-		std::vector< ct::Mat_<T>> vgW, vgB, vW, vB;
-		vgW.push_back(gW);
-		vW.push_back(W);
-		vgB.push_back(gB);
-		vB.push_back(B);
-
-		m_optim->pass(vgW, vgB, vW, vB);
-		W = vW[0]; B = vB[0];
+		m_optim->pass(gW, gB, W, B);
 
 		//printf("7\n");
 	}
 
 	void write(std::fstream& fs){
-		ct::write_fs(fs, W);
-		ct::write_fs(fs, B);
+		if(!W.size() || !B.size())
+			return;
+		ct::write_fs(fs, W[0]);
+		ct::write_fs(fs, B[0]);
 	}
 	void read(std::fstream& fs){
-		ct::read_fs(fs, W);
-		ct::read_fs(fs, B);
+		if(!W.size() || !B.size())
+			return;
+		ct::read_fs(fs, W[0]);
+		ct::read_fs(fs, B[0]);
 	}
 
 private:

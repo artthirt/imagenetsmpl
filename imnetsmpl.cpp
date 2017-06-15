@@ -156,7 +156,6 @@ void ImNetSmpl::backward(const ct::Matf &Delta)
 	m_mlp[1].backward(m_mlp[2].DltA0);
 	m_mlp[0].backward(m_mlp[1].DltA0);
 
-	std::vector< ct::Matf > deltas;
 	conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, deltas);
 
 	m_conv.back().backward(deltas);

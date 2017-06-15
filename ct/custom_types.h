@@ -610,8 +610,12 @@ public:
 		if(empty())
 			return;
 		T* d = ptr();
-		for(int i = 0; i < total(); ++i){
-			d[i] = val;
+#pragma omp parallel for
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				int offset = i * cols + j;
+				d[offset] = val;
+			}
 		}
 	}
 
@@ -680,23 +684,33 @@ public:
 
 	///********************
 	inline Mat_<T>& operator += (const Mat_<T>& v){
+		if(rows != v.rows || cols != v.cols)
+			return *this;
+
 		T* val1 = &(*this->val)[0];
 		T* val2 = &(*v.val)[0];
-//#pragma omp parallel for
 #pragma omp parallel for
-		for(int i = 0; i < total(); i++){
-			val1[i] += val2[i];
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				int offset = i * cols + j;
+				val1[offset] += val2[offset];
+			}
 		}
 		return *this;
 	}
 
 	inline Mat_<T>& operator -= (const Mat_<T>& v){
+		if(rows != v.rows || cols != v.cols)
+			return *this;
+
 		T* val1 = &(*this->val)[0];
 		T* val2 = &(*v.val)[0];
-//#pragma omp parallel for
 #pragma omp parallel for
-		for(int i = 0; i < total(); i++){
-			val1[i] -= val2[i];
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				int offset = i * cols + j;
+				val1[offset] -= val2[offset];
+			}
 		}
 		return *this;
 	}
@@ -706,8 +720,11 @@ public:
 		T* val = &(*this->val)[0];
 //#pragma omp parallel for
 #pragma omp parallel for
-		for(int i = 0; i < total(); i++){
-			val[i] *= v;
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				int offset = i * cols + j;
+				val[offset] *= v;
+			}
 		}
 		return *this;
 	}
@@ -716,8 +733,11 @@ public:
 		T* val = &(*this->val)[0];
 //#pragma omp parallel for
 #pragma omp parallel for
-		for(int i = 0; i < total(); i++){
-			val[i] += v;
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				int offset = i * cols + j;
+				val[offset] += v;
+			}
 		}
 		return *this;
 	}
@@ -726,8 +746,11 @@ public:
 		T* val = &(*this->val)[0];
 //#pragma omp parallel for
 #pragma omp parallel for
-		for(int i = 0; i < total(); i++){
-			val[i] -= v;
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				int offset = i * cols + j;
+				val[offset] -= v;
+			}
 		}
 		return *this;
 	}
@@ -965,8 +988,11 @@ public:
 	void sqrt(){
 		T* val = &(*this->val)[0];
 #pragma omp parallel for
-		for(int i = 0; i < total(); i++){
-			val[i] = std::sqrt(val[i]);
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				int offset = i * cols + j;
+				val[offset] = std::sqrt(val[offset]);
+			}
 		}
 	}
 
@@ -1091,26 +1117,26 @@ public:
 	static inline Mat_< T > zeros(int rows, int cols){
 		Mat_< T > res(rows, cols);
 		T* val = &(*res.val)[0];
-#ifdef __GNUC__
-#pragma omp simd
-#else
 #pragma omp parallel for
-#endif
-		for(int i = 0; i < res.total(); i++)
-			val[i] = 0;
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				int offset = i * cols + j;
+				val[offset] = 0;
+			}
+		}
 		return res;
 	}
 
 	static inline Mat_< T > ones(int rows, int cols){
 		Mat_< T > res(rows, cols);
 		T* val = &(*res.val)[0];
-#ifdef __GNUC__
-#pragma omp simd
-#else
 #pragma omp parallel for
-#endif
-		for(int i = 0; i < res.total(); i++)
-			val[i] = 1.;
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				int offset = i * cols + j;
+				val[offset] = 1.;
+			}
+		}
 		return res;
 	}
 

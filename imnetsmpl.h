@@ -33,13 +33,13 @@ private:
 	ImReader *m_reader;
 	double m_learningRate;
 
-
 	std::vector< conv2::convnn<float> > m_conv;
 	std::vector< ct::mlp<float> > m_mlp;
 	conv2::Pooling<float> m_pool_1;
 	std::vector< ct::MomentOptimizer<float> > m_mg;
 	int m_classes;
 	ct::Matf m_A1;
+	std::vector< ct::Matf > deltas;
 	ct::MlpOptimMoment<float> m_optim;
 	QString m_model;
 

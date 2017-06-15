@@ -106,6 +106,62 @@ inline Mat_<T> operator+ (const Mat_<T>& m1, const Mat_<T>& m2)
 }
 
 template< typename T >
+/**
+ * @brief add
+ * @param m1
+ * @param m2
+ * @param res = m1 + m2
+ */
+inline void add(const Mat_<T>& m1, const Mat_<T>& m2, Mat_<T>& res)
+{
+	if(m1.cols != m2.cols || m1.rows != m2.rows)
+		return;
+	res.setSize(m1.rows, m1.cols);
+
+	T* valr = &(*res.val)[0];
+	T* val1 = &(*m1.val)[0];
+	T* val2 = &(*m2.val)[0];
+#pragma omp parallel for
+	for(int i = 0; i < m1.rows; i++){
+#ifdef __GNUC__
+#pragma omp simd
+#endif
+		for(int j = 0; j < m1.cols; j++){
+			int offset = i * m1.cols + j;
+			valr[offset] = val1[offset] + val2[offset];
+		}
+	}
+}
+
+/**
+ * @brief add
+ * @param m1 = a1 * m1 + a2 * m2
+ * @param m2
+ * @param a1
+ * @param a2
+ */
+template< typename T >
+inline void add(Mat_<T>& m1, const Mat_<T>& m2, T a1 = 1., T a2 = 1.)
+{
+	if(m1.cols != m2.cols || m1.rows != m2.rows)
+		return;
+
+	T* val1 = &(*m1.val)[0];
+	T* val2 = &(*m2.val)[0];
+#pragma omp parallel for
+	for(int i = 0; i < m1.rows; i++){
+#ifdef __GNUC__
+#pragma omp simd
+#endif
+		for(int j = 0; j < m1.cols; j++){
+			int offset = i * m1.cols + j;
+			val1[offset] = a1 * val1[offset] + a2 * val2[offset];
+		}
+	}
+}
+
+
+template< typename T >
 inline Mat_<T> operator+ (const Mat_<T>& m1, const T& v)
 {
 	if(!m1.total())
@@ -1285,6 +1341,36 @@ inline Mat_<T> elemwiseDiv(const Mat_<T>& m1, const Mat_<T>& m2)
 		}
 	}
 	return res;
+}
+
+template< typename T >
+inline void matmul(const Mat_<T>& m1, const Mat_<T>& m2, Mat_<T>& res)
+{
+	if(m1.cols != m2.rows)
+		return;
+
+	int r = m1.rows;
+	int c = m2.cols;
+//	Mat_<T> res(r, c);
+	res.setSize(r, c);
+
+	T* valr = &(*res.val)[0];
+	T* val1 = &(*m1.val)[0];
+	T* val2 = &(*m2.val)[0];
+
+#pragma omp parallel for
+	for(int i = 0; i < m1.rows; i++){
+
+//#pragma omp parallel for
+		for(int k = 0; k < m2.cols; k++){
+			T s = 0;
+			for(int j = 0; j < m1.cols; j++){
+				s += val1[i * m1.cols + j]/*at(i, j)*/ * val2[j * m2.cols + k]/*at(j, k)*/;
+			}
+			valr[i * res.cols + k] = s;
+//			res.at(i, k) = s;
+		}
+	}
 }
 
 /**
