@@ -216,6 +216,11 @@ ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
 	gpumat::convert_to_mat(*gy_, y);
 
 	if(show_debug){
+		for(int i = 0; i < y.cols; ++i){
+			if(y.ptr()[i] < 0.1)
+				y.ptr()[i] = 0;
+		}
+
 		int cls = y.argmax(0, 1);
 		printf("--> predicted class %d\n", cls);
 	}

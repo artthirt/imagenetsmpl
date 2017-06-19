@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
 	QCoreApplication a(argc, argv);
 
-	ImReader ir(QString(res["imnet"].c_str()), 17);
+	ImReader ir(QString(res["imnet"].c_str()), 131);
 	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
 
 
@@ -136,10 +136,12 @@ int main(int argc, char *argv[])
 
 		if(contain(res, "image")){
 			imnetSmpl.predict(res["image"].c_str(), true);
+			return 0;
 		}
 
 		if(contain(res, "images")){
 			imnetSmpl.predicts(res["images"].c_str());
+			return 0;
 		}
 
 		if(!contain(res, "imnet") || res["imnet"].empty()){

@@ -89,6 +89,7 @@ void ImReader::init()
 
 	m_all_count = 0;
 
+	int numb = 0;
 	for(int i = 0; i < dir.count(); ++i){
 		QFileInfo fi(dir.path() + "/" + dir[i]);
 		if(!fi.isDir() || dir[i] == "." || dir[i] == "..")
@@ -101,7 +102,7 @@ void ImReader::init()
 			files.push_back(QString(dir[i] + "/" + inDir[j]).toStdString());
 		}
 		m_all_count += files.size();
-		qDebug() << "FILES[" << dir[i] << "]=" << files.size();
+		qDebug() << numb++ << ": FILES[" << dir[i] << "]=" << files.size();
 		m_files.push_back(files);
 		m_dirs.push_back(dir[i].toStdString());
 	}
