@@ -9,7 +9,7 @@
 #include "convnn2.h"
 #include "mlp.h"
 
-const int cnv_size = 4;
+const int cnv_size = 3;
 const int mlp_size = 3;
 
 ImNetSmpl::ImNetSmpl()
@@ -44,20 +44,17 @@ void ImNetSmpl::init()
 //	}
 
 	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7), true, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3), true);
-	m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3), true);
-	m_conv[3].init(m_conv[2].szOut(), 256, 1, 512, ct::Size(3, 3), false);
-
-	m_pool_1.init(m_conv[1]);
+	m_conv[1].init(m_conv[0].szOut(), 64, 1, 256, ct::Size(5, 5), true);
+	m_conv[2].init(m_conv[1].szOut(), 256, 1, 512, ct::Size(3, 3), true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
-	int outFeatures = m_conv.back().outputFeatures() + m_pool_1.outputFeatures();
+	int outFeatures = m_conv.back().outputFeatures();
 
 	m_mlp.resize(mlp_size);
 
-	m_mlp[0].init(outFeatures, 2048);
-	m_mlp[1].init(2048, 2048);
+	m_mlp[0].init(outFeatures, 4096);
+	m_mlp[1].init(4096, 2048);
 	m_mlp[2].init(2048, m_classes);
 
 	m_optim.init(m_mlp);
@@ -123,34 +120,15 @@ void ImNetSmpl::doPass(int pass, int batch)
 
 void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut)
 {
-//	m_conv[0].forward(&X, ct::RELU);
-//	m_conv[1].forward(&m_conv[0].XOut(), ct::RELU);
-//	m_conv[2].forward(&m_conv[1].XOut(), ct::RELU);
-//	m_conv[3].forward(&m_conv[2].XOut(), ct::RELU);
-//	m_conv[4].forward(&m_conv[3].XOut(), ct::RELU);
 	m_conv[0].forward(&X, ct::RELU);
 	for(size_t i = 1; i < m_conv.size(); ++i){
 		m_conv[i].forward(m_conv[i - 1], ct::RELU);
 	}
 
-	m_pool_1.forward(m_conv[1]);
-//	printf("pool out [%dx%dx%dx%d]\n", m_pool_1.szOut().width, m_pool_1.szOut().height, m_pool_1.szK.width, m_pool_1.szK.height);
 
-//	conv2::vec2mat(m_conv.back().XOut(), m_A1);
-//	conv2::vec2mat(m_pool_1.XOut(), m_A2);
+	conv2::vec2mat(m_conv.back().XOut(), m_A1);
 
-//	std::vector< ct::Matf* > concat;
-
-//	concat.push_back(&m_A1);
-//	concat.push_back(&m_A2);
-
-//	ct::hconcat(concat, m_Aout);
-
-	m_concat.forward(&m_conv.back(), &m_pool_1);
-
-//	m_mlp[0].forward(&m_A1);
-//	m_mlp[1].forward(&m_mlp[0].A1, ct::SOFTMAX);
-	m_mlp[0].forward(&m_concat.Y);
+	m_mlp[0].forward(&m_A1);
 	m_mlp[1].forward(&m_mlp[0].A1);
 	m_mlp[2].forward(&m_mlp[1].A1, ct::SOFTMAX);
 
@@ -166,44 +144,13 @@ void ImNetSmpl::backward(const ct::Matf &Delta)
 	m_mlp[1].backward(m_mlp[2].DltA0);
 	m_mlp[0].backward(m_mlp[1].DltA0);
 
-//	std::vector< int > cols;
-//	std::vector< ct::Matf* > mats;
-//	cols.push_back(m_conv.back().outputFeatures());
-//	cols.push_back(m_pool_1.outputFeatures());
-//	mats.push_back(&D1);
-//	mats.push_back(&D2);
-//	ct::hsplit(m_mlp[0].DltA0, cols, mats);
-
-//	conv2::mat2vec(D1, m_conv.back().szK, deltas1);
+	conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, deltas1);
 //	conv2::mat2vec(D2, m_pool_1.szK, deltas2);
 
-	m_concat.backward(m_mlp[0].DltA0);
-
-	m_pool_1.backward(m_concat.Dlt2);
-
-	m_conv.back().backward(m_concat.Dlt1);
+	m_conv.back().backward(deltas1);
 	for(int i = m_conv.size() - 2; i >= 0; i--){
-		if(i == 1){
-			conv2::convnn<float>& conv = m_conv[i + 1];
-			if(m_pool_1.Dlt.size()){
-				for(size_t i = 0; i < m_pool_1.Dlt.size(); ++i){
-					conv.Dlt[i] += m_pool_1.Dlt[i];
-				}
-			}
-		}
 		m_conv[i].backward(m_conv[i + 1].Dlt, i == 0);
 	}
-
-//	printf("-cnv4        \r");
-//	m_conv[4].backward(deltas);
-//	printf("-cnv3        \r");
-//	m_conv[3].backward(m_conv[4].Dlt);
-//	printf("-cnv2        \r");
-//	m_conv[2].backward(m_conv[3].Dlt);
-//	printf("-cnv1        \r");
-//	m_conv[1].backward(m_conv[2].Dlt);
-//	printf("-cnv0        \r\n");
-//	m_conv[0].backward(m_conv[1].Dlt, true);
 
 	m_optim.pass(m_mlp);
 }
