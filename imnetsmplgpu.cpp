@@ -3,7 +3,7 @@
 #include <QDir>
 #include <QFile>
 
-const int cnv_size = 3;
+const int cnv_size = 4;
 const int mlp_size = 3;
 
 ImNetSmplGpu::ImNetSmplGpu()
@@ -39,7 +39,7 @@ void ImNetSmplGpu::init()
 	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7), true, false);
 	m_conv[1].init(m_conv[0].szOut(), 64, 1, 256, ct::Size(5, 5), true);
 	m_conv[2].init(m_conv[1].szOut(), 256, 1, 512, ct::Size(3, 3), true);
-//	m_conv[3].init(m_conv[2].szOut(), 256, 1, 512, ct::Size(3, 3), true);
+	m_conv[3].init(m_conv[2].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
 //	m_conv[4].init(m_conv[3].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
 //	m_conv[5].init(m_conv[4].szOut(), 1024, 1, 1024, ct::Size(3, 3));
 //	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
@@ -50,8 +50,8 @@ void ImNetSmplGpu::init()
 
 	m_mlp.resize(mlp_size);
 
-	m_mlp[0].init(outFeatures, 4096, gpumat::GPU_FLOAT);
-	m_mlp[1].init(4096, 2048, gpumat::GPU_FLOAT);
+	m_mlp[0].init(outFeatures, 2048, gpumat::GPU_FLOAT);
+	m_mlp[1].init(2048, 2048, gpumat::GPU_FLOAT);
 	m_mlp[2].init(2048, m_classes, gpumat::GPU_FLOAT);
 
 	m_optim.init(m_mlp);

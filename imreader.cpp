@@ -123,10 +123,22 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 	shuffle.resize(batch);
 	cv::randu(shuffle, 0, m_all_count);
 
-	std::stringstream ss, ss2;
+//	std::stringstream ss, ss2;
 
 	std::binomial_distribution<int> bn(1, 0.5);
 
+	std::vector < bool > bflip;
+	bflip.resize(batch);
+
+	if(flip){
+		for(int i = 0; i < bflip.size(); ++i){
+			bflip[i] = bn(_rnd);
+		}
+	}else{
+		std::fill(bflip.begin(), bflip.end(), false);
+	}
+
+#pragma omp parallel for
 	for(int i = 0; i < shuffle.size(); ++i){
 		int id = shuffle[i];
 
@@ -143,15 +155,15 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 			cnt += m_files[j].size();
 		}
 
-		ss << id1 << ", ";
-		ss2 << id2 << ", ";
+//		ss << id1 << ", ";
+//		ss2 << id2 << ", ";
 
-		bool fl = false;
-		if(flip){
-			fl = bn(_rnd);
-		}
+//		bool fl = false;
+//		if(flip){
+//			fl = bn(_rnd);
+//		}
 
-		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], fl);
+		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], bflip[i]);
 		if(!Xi.empty()){
 			X[i] = Xi;
 			y.ptr()[i] = id1;
