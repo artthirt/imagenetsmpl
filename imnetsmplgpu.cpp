@@ -50,8 +50,8 @@ void ImNetSmplGpu::init()
 
 	m_mlp.resize(mlp_size);
 
-	m_mlp[0].init(outFeatures, 2048, gpumat::GPU_FLOAT);
-	m_mlp[1].init(2048, 2048, gpumat::GPU_FLOAT);
+	m_mlp[0].init(outFeatures, 4096, gpumat::GPU_FLOAT);
+	m_mlp[1].init(4096, 2048, gpumat::GPU_FLOAT);
 	m_mlp[2].init(2048, m_classes, gpumat::GPU_FLOAT);
 
 	m_optim.init(m_mlp);
