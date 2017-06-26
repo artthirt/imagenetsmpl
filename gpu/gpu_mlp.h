@@ -47,6 +47,9 @@ public:
 	void write(std::fstream& fs);
 	void read(std::fstream& fs);
 
+	void write2(std::fstream& fs);
+	void read2(std::fstream& fs);
+
 private:
 	bool m_init;
 	bool m_is_dropout;

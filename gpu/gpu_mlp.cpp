@@ -196,6 +196,18 @@ void mlp::read(std::fstream &fs)
 	gpumat::read_fs(fs, B);
 }
 
+void mlp::write2(std::fstream &fs)
+{
+	gpumat::write_fs2(fs, W);
+	gpumat::write_fs2(fs, B);
+}
+
+void mlp::read2(std::fstream &fs)
+{
+	gpumat::read_fs2(fs, W);
+	gpumat::read_fs2(fs, B);
+}
+
 ///**************************
 
 bool MlpOptim::init(const std::vector<mlp> &_mlp)

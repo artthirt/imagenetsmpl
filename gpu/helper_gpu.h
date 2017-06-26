@@ -45,6 +45,13 @@ void convert_to_mat(const gpumat::GpuMat& gmat, ct::Matd& mat);
 void write_fs(std::fstream &fs, const GpuMat &mat);
 
 /**
+ * @brief write_fs2
+ * @param fs
+ * @param mat
+ */
+void write_fs2(std::fstream &fs, const GpuMat &mat);
+
+/**
  * @brief write_gmat
  * @param name
  * @param mat
@@ -58,6 +65,13 @@ void write_gmat(const std::string &name, const GpuMat &mat);
  * @param mat
  */
 void read_fs(std::fstream &fs, gpumat::GpuMat& mat);
+
+/**
+ * @brief read_fs2
+ * @param fs
+ * @param mat
+ */
+void read_fs2(std::fstream &fs, gpumat::GpuMat& mat);
 
 /////////////////////////////////////////
 

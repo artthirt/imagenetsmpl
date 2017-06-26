@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
 	QCoreApplication a(argc, argv);
 
-	ImReader ir(QString(res["imnet"].c_str()), 131);
+	ImReader ir(QString(res["imnet"].c_str()), 289);
 	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
 
 

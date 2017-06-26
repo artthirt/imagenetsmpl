@@ -122,10 +122,10 @@ bool convnn_gpu::use_pool() const
 int convnn_gpu::outputFeatures() const
 {
 	if(m_use_pool){
-		int val = szA2.area() * K;
+		int val = szA2.area() * kernels;
 		return val;
 	}else{
-		int val= szA1.area() * K;
+		int val= szA1.area() * kernels;
 		return val;
 	}
 }
@@ -142,7 +142,7 @@ void convnn_gpu::init(const ct::Size &_szA0, int _channels, int stride, int _K,
 					  const ct::Size &_szW, bool use_pool, bool use_transpose)
 {
 	szW = _szW;
-	K = _K;
+	kernels = _K;
 	channels = _channels;
 	m_use_pool = use_pool;
 	m_use_transpose = use_transpose;
@@ -150,7 +150,7 @@ void convnn_gpu::init(const ct::Size &_szA0, int _channels, int stride, int _K,
 	this->stride = stride;
 
 	int rows = szW.area() * channels;
-	int cols = K;
+	int cols = kernels;
 
 	ct::get_cnv_sizes(szA0, szW, stride, szA1, szA2);
 
@@ -163,7 +163,7 @@ void convnn_gpu::init(const ct::Size &_szA0, int _channels, int stride, int _K,
 	float n = (float)1./szW.area();
 
 	for(size_t i = 0; i < W.size(); ++i){
-		ct::Matf Wi(rows, cols), Bi(K, 1);
+		ct::Matf Wi(rows, cols), Bi(kernels, 1);
 		Wi.randn(0, n);
 		gpumat::convert_to_gpu(Wi, W[i]);
 		Bi.randn(0, n);
@@ -173,7 +173,7 @@ void convnn_gpu::init(const ct::Size &_szA0, int _channels, int stride, int _K,
 	gW[0].resize(W[0]);
 	gB[0].resize(B[0]);
 
-	printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, K);
+	printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, kernels);
 
 	m_optim->init(W, B);
 }
@@ -355,7 +355,7 @@ void convnn_gpu::backward(const std::vector<gpumat::GpuMat> &D, bool last_level)
 //		dSub.resize(D.size());
 //		qDebug("backward: upsample(D[%dx%d])", D[0].rows, D[0].cols);
 
-		gpumat::conv2::upsample(D, K, Mask, szA2, szA1, dSub2);
+		gpumat::conv2::upsample(D, kernels, Mask, szA2, szA1, dSub2);
 
 //		qDebug("backward: derivative(D[%dx%d])", dSub2[0].rows, dSub2[0].cols);
 
@@ -415,7 +415,7 @@ void convnn_gpu::backward(const std::vector<gpumat::GpuMat> &D, bool last_level)
 	gpumat::mulval(gB[0], (double)1./(D.size() * channels));
 
 	if(m_lambda > 0){
-		gpumat::add(gW[0], W[0], 1, (double)m_lambda / K);
+		gpumat::add(gW[0], W[0], 1, (double)m_lambda / kernels);
 	}
 
 #if 0
@@ -461,6 +461,32 @@ void convnn_gpu::read(std::fstream &fs)
 {
 	gpumat::read_fs(fs, W[0]);
 	gpumat::read_fs(fs, B[0]);
+}
+
+void convnn_gpu::write2(std::fstream &fs)
+{
+//	int rows = szW.area() * channels;
+//	int cols = K;
+
+	fs.write((char*)&szW.width, sizeof(szW.width));
+	fs.write((char*)&szW.height, sizeof(szW.height));
+	fs.write((char*)&channels, sizeof(channels));
+	fs.write((char*)&kernels, sizeof(kernels));
+
+	gpumat::write_fs2(fs, W[0]);
+	gpumat::write_fs2(fs, B[0]);
+}
+
+void convnn_gpu::read2(std::fstream &fs)
+{
+	fs.read((char*)&szW.width, sizeof(szW.width));
+	fs.read((char*)&szW.height, sizeof(szW.height));
+	fs.read((char*)&channels, sizeof(channels));
+	fs.read((char*)&kernels, sizeof(kernels));
+
+	gpumat::read_fs2(fs, W[0]);
+	gpumat::read_fs2(fs, B[0]);
+
 }
 
 ///////////////////////////////

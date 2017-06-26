@@ -63,6 +63,33 @@ void write_fs(std::fstream &fs, const gpumat::GpuMat& mat)
 	}
 }
 
+//////////////////////////////////
+
+template< typename T >
+void write_mat2(std::fstream &fs, const gpumat::GpuMat& mat)
+{
+	ct::Mat_<T> mmat;
+	convert_to_mat(mat, mmat);
+
+	ct::write_fs2(fs, mmat);
+}
+
+void write_fs2(std::fstream &fs, const gpumat::GpuMat& mat)
+{
+	if(!mat.empty()){
+		switch (mat.type) {
+		case GPU_DOUBLE:
+			write_mat2<double>(fs, mat);
+			break;
+		case GPU_FLOAT:
+			write_mat2<float>(fs, mat);
+			break;
+		}
+	}
+}
+
+////////////////////////////
+
 template< typename T >
 void read_mat(std::fstream &fs, gpumat::GpuMat& mat)
 {
@@ -86,6 +113,33 @@ void read_fs(std::fstream &fs, gpumat::GpuMat& mat)
 		}
 	}
 }
+
+///////////////////////////
+
+template< typename T >
+void read_mat2(std::fstream &fs, gpumat::GpuMat& mat)
+{
+	ct::Mat_<T> mmat;
+	ct::read_fs2(fs, mmat);
+
+	convert_to_gpu(mmat, mat);
+}
+
+void read_fs2(std::fstream &fs, gpumat::GpuMat& mat)
+{
+	if(!mat.empty()){
+		switch (mat.type) {
+		case GPU_DOUBLE:
+			read_mat2<double>(fs, mat);
+			break;
+		case GPU_FLOAT:
+			read_mat2<float>(fs, mat);
+			break;
+		}
+	}
+}
+
+////////////////////////////
 
 void write_gmat(const std::string &name, const GpuMat &mat)
 {

@@ -29,6 +29,9 @@ public:
 	void save_net(const QString& name);
 	void load_net(const QString& name);
 
+	void save_net2(const QString& name);
+	void load_net2(const QString& name);
+
 	void setModelName(const QString& name);
 
 private:

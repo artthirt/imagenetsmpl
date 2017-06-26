@@ -121,7 +121,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 	std::vector< int > shuffle;
 	shuffle.resize(batch);
-	cv::randu(shuffle, 0, m_all_count);
+	cv::randu(shuffle, 0, m_files.size());
 
 //	std::stringstream ss, ss2;
 
@@ -138,22 +138,28 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 		std::fill(bflip.begin(), bflip.end(), false);
 	}
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for(int i = 0; i < shuffle.size(); ++i){
-		int id = shuffle[i];
+		int id1 = shuffle[i];
 
-		int id1 = 0;
-		int id2 = 0;
+		int len = m_files[id1].size();
 
-		int cnt = 0;
-		for(int j = 0; j < m_files.size(); ++j){
-			if(cnt + m_files[j].size() > id){
-				id1 = j;
-				id2 = id - cnt;
-				break;
-			}
-			cnt += m_files[j].size();
-		}
+		std::uniform_int_distribution<int> un(0, len - 1);
+		int id2 = un(_rnd);
+
+//		printf("un: %d, ", id1);
+//		int id1 = 0;
+//		int id2 = 0;
+
+//		int cnt = 0;
+//		for(int j = 0; j < m_files.size(); ++j){
+//			if(cnt + m_files[j].size() > id){
+//				id1 = j;
+//				id2 = id - cnt;
+//				break;
+//			}
+//			cnt += m_files[j].size();
+//		}
 
 //		ss << id1 << ", ";
 //		ss2 << id2 << ", ";
@@ -171,6 +177,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 			X[i] = ct::Matf::zeros(1, IM_HEIGHT * IM_WIDTH * 3);
 		}
 	}
+//	std::cout << std::endl;
 //	std::cout << "classes: " << ss.str() << std::endl;
 //	std::cout << "indexes: " << ss2.str() << std::endl;
 }

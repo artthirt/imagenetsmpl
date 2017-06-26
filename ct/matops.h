@@ -1743,6 +1743,41 @@ void read_fs(std::fstream& fs, ct::Mat_<T>& mat)
 	fs.read((char*)mat.ptr(), sizeof(T) * mat.total());
 }
 
+/////////////////////////////
+
+/**
+ * @brief write_fs2
+ * write matrix woth info about rows and cols
+ * @param fs
+ * @param mat
+ */
+template< typename T >
+void write_fs2(std::fstream& fs, const ct::Mat_<T>& mat)
+{
+	int rows = mat.rows, cols = mat.cols;
+	fs.write((char*)&rows, sizeof(rows));
+	fs.write((char*)&cols, sizeof(rows));
+	fs.write((char*)mat.ptr(), sizeof(T) * mat.total());
+}
+
+/**
+ * @brief read_fs2
+ * read matrix with info about rows and cols
+ * @param fs
+ * @param mat
+ */
+template< typename T >
+void read_fs2(std::fstream& fs, ct::Mat_<T>& mat)
+{
+	int rows, cols;
+	fs.read((char*)&rows, sizeof(rows));
+	fs.read((char*)&cols, sizeof(rows));
+	mat.setSize(rows, cols);
+	fs.read((char*)mat.ptr(), sizeof(T) * mat.total());
+}
+
+////////////////////////////////
+
 template< typename T >
 void read_mat(const std::string& name, ct::Mat_<T>& mat)
 {

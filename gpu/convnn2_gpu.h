@@ -14,7 +14,7 @@ class convnn_gpu
 public:
 	std::vector< gpumat::GpuMat > W;		/// weights
 	std::vector< gpumat::GpuMat > B;		/// biases
-	int K;									/// kernels
+	int kernels;									/// kernels
 	int channels;							/// input channels
 	int stride;
 	ct::Size szA0;							/// input size
@@ -78,6 +78,9 @@ public:
 
 	void write(std::fstream& fs);
 	void read(std::fstream& fs);
+
+	void write2(std::fstream& fs);
+	void read2(std::fstream& fs);
 
 private:
 	bool m_use_pool;
