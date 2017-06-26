@@ -8,6 +8,8 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 
+#include "imnet_list.h"
+
 #include <random>
 ///////////////////////
 
@@ -172,7 +174,12 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], bflip[i]);
 		if(!Xi.empty()){
 			X[i] = Xi;
-			y.ptr()[i] = id1;
+			std::string n = m_dirs[id1];
+			int idy = imnet::getNumberOfList(n);
+			if(idy >= 0)
+				y.ptr()[i] = idy;
+			else
+				printf("Oops. index not found for '%s'", n.c_str());
 		}else{
 			X[i] = ct::Matf::zeros(1, IM_HEIGHT * IM_WIDTH * 3);
 		}

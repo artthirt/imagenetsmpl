@@ -13,13 +13,15 @@ SOURCES += main.cpp \
     imnetsmpl.cpp \
     imreader.cpp \
    # qt_work_mat.cpp
-    imnetsmplgpu.cpp
+    imnetsmplgpu.cpp \
+    imnet_list.cpp
 
 HEADERS += \
     imnetsmpl.h \
     imreader.h \
     #qt_work_mat.h
-    imnetsmplgpu.h
+    imnetsmplgpu.h \
+    imnet_list.h
 
 CONFIG(debug, debug|release){
     TMP = debug
