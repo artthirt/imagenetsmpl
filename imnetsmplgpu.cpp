@@ -218,13 +218,25 @@ ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
 	gpumat::convert_to_mat(*gy_, y);
 
 	if(show_debug){
+		std::vector< int > numbers;
+		std::vector< float > prob;
 		for(int i = 0; i < y.cols; ++i){
 			if(y.ptr()[i] < 0.1)
 				y.ptr()[i] = 0;
+			else{
+				numbers.push_back(i);
+				prob.push_back(y.ptr()[i]);
+			}
 		}
 
 		int cls = y.argmax(0, 1);
 		printf("--> predicted class %d\n", cls);
+
+		printf("probs:\n");
+		for(size_t i = 0; i < numbers.size(); ++i){
+			std::cout << "cls=" << numbers[i] << "(" << prob[i] << "); ";
+		}
+		std::cout << std::endl;
 	}
 
 	return y;
