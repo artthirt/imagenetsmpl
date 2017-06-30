@@ -1,6 +1,6 @@
 # imagenetsmpl
 Sample code for train NN for ImageNet
-
+<pre>
 Pretrained model can be loaded by https://drive.google.com/file/d/0B9-nwoybwuRJUGtweHlFZm1DTTQ/view?usp=sharing
 Model pretrained only for 220 classes
 
@@ -18,3 +18,5 @@ Model:
 Used:
 imagenetsmpl -load2 <path/to/model(model.bin_ext)> [-f /path/to/imagenet/dir -lr <learing rate>]\
               [-image /path/to/image(for predict classes)] [-images /path/to/dir/with/images(for predict all images in directories)]
+
+</pre>
