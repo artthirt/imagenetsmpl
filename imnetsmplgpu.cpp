@@ -406,23 +406,23 @@ void ImNetSmplGpu::load_net2(const QString &name)
 	/// size of mlp array
 	fs.read((char*)&mlps, sizeof(mlps));
 
-	printf("Load model: conv size %d, mlp size %d", cnvs, mlps);
+	printf("Load model: conv size %d, mlp size %d\n", cnvs, mlps);
 
 	m_conv.resize(cnvs);
 	m_mlp.resize(mlps);
 
-	printf("conv");
+	printf("conv\n");
 	for(size_t i = 0; i < m_conv.size(); ++i){
 		gpumat::conv2::convnn_gpu &cnv = m_conv[i];
 		cnv.read2(fs);
-		printf("layer %d: rows %d, cols %d", i, cnv.W[0].rows, cnv.W[0].cols);
+		printf("layer %d: rows %d, cols %d\n", i, cnv.W[0].rows, cnv.W[0].cols);
 	}
 
-	printf("mlp");
+	printf("mlp\n");
 	for(size_t i = 0; i < m_mlp.size(); ++i){
 		gpumat::mlp &mlp = m_mlp[i];
 		mlp.read2(fs);
-		printf("layer %d: rows %d, cols %d", i, mlp.W.rows, mlp.W.cols);
+		printf("layer %d: rows %d, cols %d\n", i, mlp.W.rows, mlp.W.cols);
 	}
 
 	printf("model loaded.\n");

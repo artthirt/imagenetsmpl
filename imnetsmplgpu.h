@@ -26,10 +26,30 @@ public:
 	void predicts(const QString& sdir);
 	float loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_);
 
+	/**
+	 * @brief save_net
+	 * save only matrices of weights
+	 * @param name
+	 */
 	void save_net(const QString& name);
+	/**
+	 * @brief load_net
+	 * load only matrices of weights
+	 * @param name
+	 */
 	void load_net(const QString& name);
 
+	/**
+	 * @brief save_net2
+	 * save matrices with information about count layers and size of matrices
+	 * @param name
+	 */
 	void save_net2(const QString& name);
+	/**
+	 * @brief load_net2
+	 * load matrices with information about count layers and size of matrices
+	 * @param name
+	 */
 	void load_net2(const QString& name);
 
 	void setModelName(const QString& name);

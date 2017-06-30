@@ -345,7 +345,7 @@ void flipW(const ct::Mat_<T>& W, const ct::Size& sz,int channels, ct::Mat_<T>& W
 template< typename T >
 class convnn_abstract{
 public:
-	int K;									/// kernels
+	int kernels;									/// kernels
 	int channels;							/// input channels
 
 	ct::Size szA0;							/// input size
@@ -431,10 +431,10 @@ public:
 
 	int outputFeatures() const{
 		if(m_use_pool){
-			int val = convnn_abstract<T>::szA2.area() * convnn_abstract<T>::K;
+			int val = convnn_abstract<T>::szA2.area() * convnn_abstract<T>::kernels;
 			return val;
 		}else{
-			int val= convnn_abstract<T>::szA1.area() * convnn_abstract<T>::K;
+			int val= convnn_abstract<T>::szA1.area() * convnn_abstract<T>::kernels;
 			return val;
 		}
 	}
@@ -459,13 +459,13 @@ public:
 		szW = _szW;
 		m_use_pool = use_pool;
 		m_use_transpose = use_transpose;
-		convnn_abstract<T>::K = _K;
+		convnn_abstract<T>::kernels = _K;
 		convnn_abstract<T>::channels = _channels;
 		convnn_abstract<T>::szA0 = _szA0;
 		this->stride = stride;
 
 		int rows = szW.area() * convnn_abstract<T>::channels;
-		int cols = convnn_abstract<T>::K;
+		int cols = convnn_abstract<T>::kernels;
 
 		ct::get_cnv_sizes(convnn_abstract<T>::szA0, szW, stride, convnn_abstract<T>::szA1, convnn_abstract<T>::szA2);
 
@@ -478,12 +478,12 @@ public:
 
 		W[0].setSize(rows, cols);
 		W[0].randn(0, n);
-		B[0].setSize(1, convnn_abstract<T>::K);
+		B[0].setSize(1, convnn_abstract<T>::kernels);
 		B[0].randn(0, n);
 
 		m_optim->init(W, B);
 
-		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, convnn_abstract<T>::K);
+		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, convnn_abstract<T>::kernels);
 	}
 
 	void forward(const std::vector< ct::Mat_<T> >* _pX, ct::etypefunction func){
@@ -610,7 +610,7 @@ public:
 			for(int i = 0; i < D.size(); ++i){
 				ct::Mat_<T> Di = D[i];
 				//Di.set_dims(szA2.area(), K);
-				upsample(Di, convnn_abstract<T>::K, Mask[i],convnn_abstract<T>:: szA2, convnn_abstract<T>::szA1, dSub[i]);
+				upsample(Di, convnn_abstract<T>::kernels, Mask[i],convnn_abstract<T>:: szA2, convnn_abstract<T>::szA1, dSub[i]);
 			}
 			backcnv(dSub, dSub);
 		}else{
@@ -646,7 +646,7 @@ public:
 
 		//printf("4\n");
 		if(m_Lambda > 0){
-			ct::add<float>(gW[0],  W[0], 1., (m_Lambda / convnn_abstract<T>::K));
+			ct::add<float>(gW[0],  W[0], 1., (m_Lambda / convnn_abstract<T>::kernels));
 		}
 
 		//printf("5\n");
@@ -685,6 +685,26 @@ public:
 		ct::read_fs(fs, B[0]);
 	}
 
+	void write2(std::fstream& fs){
+		fs.write((char*)&szW.width, sizeof(szW.width));
+		fs.write((char*)&szW.height, sizeof(szW.height));
+		fs.write((char*)&(convnn_abstract<T>::channels), sizeof(convnn_abstract<T>::channels));
+		fs.write((char*)&(convnn_abstract<T>::kernels), sizeof(convnn_abstract<T>::kernels));
+
+		ct::write_fs2(fs, W[0]);
+		ct::write_fs2(fs, B[0]);
+	}
+
+	void read2(std::fstream& fs){
+		fs.read((char*)&szW.width, sizeof(szW.width));
+		fs.read((char*)&szW.height, sizeof(szW.height));
+		fs.read((char*)&(convnn_abstract<T>::channels), sizeof(convnn_abstract<T>::channels));
+		fs.read((char*)&(convnn_abstract<T>::kernels), sizeof(convnn_abstract<T>::kernels));
+
+		ct::read_fs2(fs, W[0]);
+		ct::read_fs2(fs, B[0]);
+	}
+
 private:
 	bool m_use_pool;
 	ct::etypefunction m_func;
@@ -704,7 +724,7 @@ public:
 	Pooling(){
 		pX = nullptr;
 		convnn_abstract<T>::channels = 0;
-		convnn_abstract<T>::K = 0;
+		convnn_abstract<T>::kernels = 0;
 	}
 
 	ct::Size szOut() const{
@@ -717,28 +737,28 @@ public:
 		return &A2;
 	}
 	int outputFeatures() const{
-			int val = convnn_abstract<T>::szA2.area() * convnn_abstract<T>::K;
+			int val = convnn_abstract<T>::szA2.area() * convnn_abstract<T>::kernels;
 			return val;
 	}
 
 	void init(const ct::Size& _szA0, int _channels, int _K){
-		convnn_abstract<T>::K = _K;
+		convnn_abstract<T>::kernels = _K;
 		convnn_abstract<T>::channels = _channels;
 		convnn_abstract<T>::szA0 = _szA0;
 
 		convnn_abstract<T>::szA2 = ct::Size(convnn_abstract<T>::szA0.width/2, convnn_abstract<T>::szA0.height/2);
 
-		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, convnn_abstract<T>::K);
+		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, convnn_abstract<T>::kernels);
 	}
 
 	void init(const convnn<T>& conv){
-		convnn_abstract<T>::K = conv.K;
+		convnn_abstract<T>::kernels = conv.kernels;
 		convnn_abstract<T>::channels = conv.channels;
 		convnn_abstract<T>::szA0 = conv.szOut();
 
 		convnn_abstract<T>::szA2 = ct::Size(convnn_abstract<T>::szA0.width/2, convnn_abstract<T>::szA0.height/2);
 
-		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, convnn_abstract<T>::K);
+		printf("Out=[%dx%dx%d]\n", szOut().width, szOut().height, convnn_abstract<T>::kernels);
 	}
 
 	void forward(const std::vector< ct::Mat_<T> >* _pX){
@@ -784,7 +804,7 @@ public:
 		for(size_t i = 0; i < D.size(); ++i){
 			ct::Mat_<T> Di = D[i];
 			//Di.set_dims(szA2.area(), K);
-			upsample(Di, convnn_abstract<T>::K, Mask[i], convnn_abstract<T>::szA2, convnn_abstract<T>::szA0, Dlt[i]);
+			upsample(Di, convnn_abstract<T>::kernels, Mask[i], convnn_abstract<T>::szA2, convnn_abstract<T>::szA0, Dlt[i]);
 		}
 	}
 

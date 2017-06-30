@@ -310,6 +310,18 @@ public:
 		read_fs(fs, B);
 	}
 
+	void write2(std::fstream &fs)
+	{
+		write_fs2(fs, W);
+		write_fs2(fs, B);
+	}
+
+	void read2(std::fstream &fs)
+	{
+		read_fs2(fs, W);
+		read_fs2(fs, B);
+	}
+
 private:
 	bool m_init;
 	bool m_is_dropout;

@@ -23,9 +23,27 @@ public:
 	ct::Matf predict(const QString& name, bool show_debug = false);
 	void predicts(const QString& sdir);
 	float loss(const ct::Matf &y, ct::Matf &y_);
-
+	/**
+	 * @brief save_net
+	 * @param name
+	 */
 	void save_net(const QString& name);
+	/**
+	 * @brief load_net
+	 * @param name
+	 */
 	void load_net(const QString& name);
+
+	/**
+	 * @brief save_net2
+	 * @param name
+	 */
+	void save_net2(const QString& name);
+	/**
+	 * @brief load_net2
+	 * @param name
+	 */
+	void load_net2(const QString& name);
 
 	void setModelName(const QString& name);
 

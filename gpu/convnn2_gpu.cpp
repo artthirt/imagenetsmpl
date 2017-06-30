@@ -486,7 +486,6 @@ void convnn_gpu::read2(std::fstream &fs)
 
 	gpumat::read_fs2(fs, W[0]);
 	gpumat::read_fs2(fs, B[0]);
-
 }
 
 ///////////////////////////////

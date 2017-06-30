@@ -97,8 +97,8 @@ int main(int argc, char *argv[])
 			   "-pass [numbers pass]            - size of pass *default: 1000\n"
 			   "-batch [number batch for one]   - size of batch for pass (default: 10)\n"
 			   "-images path/to/dir/with/images - check all images in directory\n"
-			   "-lr [learing rate]				- learing rate (default: 0.001"
-			   "-load2 filename					- load extension model with information about sizes of layers and matrices");
+			   "-lr learing_rate				- learing rate (default: 0.001"
+			   "-load2 path/to/model			- load extension model with information about sizes of layers and matrices");
 		return 1;
 	}
 

@@ -291,6 +291,101 @@ void ImNetSmpl::load_net(const QString &name)
 	printf("model loaded.\n");
 }
 
+
+//////////////////////////
+
+void ImNetSmpl::save_net2(const QString &name)
+{
+	QString n = QDir::fromNativeSeparators(name);
+
+	std::fstream fs;
+	fs.open(n.toStdString(), std::ios_base::out | std::ios_base::binary);
+
+	if(!fs.is_open()){
+		printf("File %s not open\n", n.toLatin1().data());
+		return;
+	}
+
+//	write_vector(fs, m_cnvlayers);
+//	write_vector(fs, m_layers);
+
+//	fs.write((char*)&m_szA0, sizeof(m_szA0));
+
+	int cnvs = m_conv.size(), mlps = m_mlp.size();
+
+	/// size of convolution array
+	fs.write((char*)&cnvs, sizeof(cnvs));
+	/// size of mlp array
+	fs.write((char*)&mlps, sizeof(mlps));
+
+	for(size_t i = 0; i < m_conv.size(); ++i){
+		conv2::convnn<float> &cnv = m_conv[i];
+		cnv.write2(fs);
+	}
+
+	for(size_t i = 0; i < m_mlp.size(); ++i){
+		m_mlp[i].write2(fs);
+	}
+
+	printf("model saved.\n");
+
+}
+
+void ImNetSmpl::load_net2(const QString &name)
+{
+	QString n = QDir::fromNativeSeparators(name);
+
+	std::fstream fs;
+	fs.open(n.toStdString(), std::ios_base::in | std::ios_base::binary);
+
+	if(!fs.is_open()){
+		printf("File %s not open\n", n.toLatin1().data());
+		return;
+	}
+
+	m_model = n;
+
+//	read_vector(fs, m_cnvlayers);
+//	read_vector(fs, m_layers);
+
+//	fs.read((char*)&m_szA0, sizeof(m_szA0));
+
+//	setConvLayers(m_cnvlayers, m_szA0);
+
+	init();
+
+	int cnvs, mlps;
+
+	/// size of convolution array
+	fs.read((char*)&cnvs, sizeof(cnvs));
+	/// size of mlp array
+	fs.read((char*)&mlps, sizeof(mlps));
+
+	printf("Load model: conv size %d, mlp size %d", cnvs, mlps);
+
+	m_conv.resize(cnvs);
+	m_mlp.resize(mlps);
+
+	printf("conv");
+	for(size_t i = 0; i < m_conv.size(); ++i){
+		conv2::convnn<float> &cnv = m_conv[i];
+		cnv.read2(fs);
+		printf("layer %d: rows %d, cols %d", i, cnv.W[0].rows, cnv.W[0].cols);
+	}
+
+	printf("mlp");
+	for(size_t i = 0; i < m_mlp.size(); ++i){
+		ct::mlp<float> &mlp = m_mlp[i];
+		mlp.read2(fs);
+		printf("layer %d: rows %d, cols %d", i, mlp.W.rows, mlp.W.cols);
+	}
+
+	printf("model loaded.\n");
+
+}
+
+////////////////////////////////
+
 void ImNetSmpl::setModelName(const QString &name)
 {
 	if(!name.isEmpty())
