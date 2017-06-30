@@ -20,6 +20,7 @@ ImNetSmpl::ImNetSmpl()
 	m_classes = 1000;
 	m_init = false;
 	m_model = "model.bin";
+	m_save_model = "model.bin_ext";
 }
 
 void ImNetSmpl::setReader(ImReader *ir)
@@ -113,7 +114,7 @@ void ImNetSmpl::doPass(int pass, int batch)
 			printf("pass %d: loss=%f;\tpred=%f\n", i, ls / idx, pr / idx);
 		}
 		if((i % 40) == 0){
-			save_net(m_model);
+			save_net2(m_save_model);
 		}
 	}
 }
@@ -225,6 +226,11 @@ float ImNetSmpl::loss(const ct::Matf &y, ct::Matf &y_)
 	float f = r.sum() / r.rows;
 
 	return f;
+}
+
+void ImNetSmpl::setSaveModelName(const QString name)
+{
+	m_save_model = name;
 }
 
 void ImNetSmpl::save_net(const QString &name)

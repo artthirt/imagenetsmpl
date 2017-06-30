@@ -26,6 +26,9 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-load2" && i < argc){
 			res["load2"] = argv[i + 1];
 		}
+		if(str == "-save" && i < argc){
+			res["save"] = argv[i + 1];
+		}
 		if(str == "-image" && i < argc){
 			res["image"] = argv[i + 1];
 		}
@@ -97,8 +100,9 @@ int main(int argc, char *argv[])
 			   "-pass [numbers pass]            - size of pass *default: 1000\n"
 			   "-batch [number batch for one]   - size of batch for pass (default: 10)\n"
 			   "-images path/to/dir/with/images - check all images in directory\n"
-			   "-lr [learing rate]				- learing rate (default: 0.001"
-			   "-load2 filename					- load extension model with information about sizes of layers and matrices");
+			   "-lr learing_rate				- learing rate (default: 0.001"
+			   "-save path/to/model				- name for saved train model"
+			   "-load2 path/to/model			- load extension model with information about sizes of layers and matrices");
 		return 1;
 	}
 
@@ -138,6 +142,10 @@ int main(int argc, char *argv[])
 			imnetSmpl.load_net(res["load"].c_str());
 		}
 
+		if(contain(res, "save")){
+			imnetSmpl.setSaveModelName(res["save"].c_str());
+		}
+
 		if(contain(res, "load2")){
 			imnetSmpl.load_net2(res["load2"].c_str());
 		}
@@ -165,6 +173,10 @@ int main(int argc, char *argv[])
 
 		if(contain(res, "load")){
 			imnetSmpl.load_net(res["load"].c_str());
+		}
+
+		if(contain(res, "save")){
+			imnetSmpl.setSaveModelName(res["save"].c_str());
 		}
 
 		if(contain(res, "load2")){

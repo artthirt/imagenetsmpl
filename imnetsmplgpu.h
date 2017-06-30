@@ -27,6 +27,13 @@ public:
 	float loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_);
 
 	/**
+	 * @brief setSaveModelName
+	 * name for saved model
+	 * @param name
+	 */
+	void setSaveModelName(const QString name);
+
+	/**
 	 * @brief save_net
 	 * save only matrices of weights
 	 * @param name
@@ -69,6 +76,7 @@ private:
 
 	int m_check_count;
 	QString m_model;
+	QString m_save_model;
 
 	bool m_init;
 

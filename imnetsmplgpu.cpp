@@ -13,6 +13,7 @@ ImNetSmplGpu::ImNetSmplGpu()
 	m_check_count = 600;
 	m_classes = 1000;
 	m_model = "model.bin";
+	m_save_model = "model.bin_ext";
 }
 
 void ImNetSmplGpu::setReader(ImReader *ir)
@@ -130,8 +131,8 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 			printf("pass %d: loss=%f;\tpred=%f\n", i, ls / idx, pr / idx);
 		}
 		if((i % 80) == 0){
-			save_net(m_model);
-			save_net2(m_model + "_ext");
+//			save_net(m_model);
+			save_net2(m_save_model);
 		}
 	}
 }
@@ -269,6 +270,11 @@ float ImNetSmplGpu::loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_)
 	float f = r.sum() / r.rows;
 
 	return f;
+}
+
+void ImNetSmplGpu::setSaveModelName(const QString name)
+{
+	m_save_model = name;
 }
 
 void ImNetSmplGpu::save_net(const QString &name)

@@ -23,6 +23,14 @@ public:
 	ct::Matf predict(const QString& name, bool show_debug = false);
 	void predicts(const QString& sdir);
 	float loss(const ct::Matf &y, ct::Matf &y_);
+
+	/**
+	 * @brief setSaveModelName
+	 * name for saved model
+	 * @param name
+	 */
+	void setSaveModelName(const QString name);
+
 	/**
 	 * @brief save_net
 	 * @param name
@@ -64,6 +72,8 @@ private:
 //	std::vector< ct::Matf > deltas2;
 	ct::MlpOptim<float> m_optim;
 	QString m_model;
+	QString m_save_model;
+
 
 	int m_check_count;
 	bool m_init;
