@@ -1,9 +1,9 @@
 # imagenetsmpl
-Sample code for train NN for ImageNet
-<pre>
-Pretrained model can be loaded by https://drive.google.com/file/d/0B9-nwoybwuRJUGtweHlFZm1DTTQ/view?usp=sharing
-Model pretrained only for 220 classes
+Sample code for train NN for ImageNet<br>
 
+Pretrained model can be loaded by https://drive.google.com/file/d/0B9-nwoybwuRJUGtweHlFZm1DTTQ/view?usp=sharing
+Model pretrained only for 220 classes<br>
+<pre>
 Model:
   convolution:
    1 ->  size of weight - 7x7, stride - 4, channels input 3, kernels - 64, without maxpooling, uses relu
@@ -16,7 +16,7 @@ Model:
    3 -> input features - 2048, output classes - 1000, uses softmax
 
 Used:
-imagenetsmpl -load2 <path/to/model(model.bin_ext)> [-f /path/to/imagenet/dir -lr <learing rate>]\
+imagenetsmpl -gpu -load2 <path/to/model(model.bin_ext)> [-f /path/to/imagenet/dir -lr <learing rate>]\
               [-image /path/to/image(for predict classes)] [-images /path/to/dir/with/images(for predict all images in directories)]
 
 </pre>
