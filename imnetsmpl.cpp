@@ -9,7 +9,7 @@
 #include "convnn2.h"
 #include "mlp.h"
 
-const int cnv_size = 3;
+const int cnv_size = 4;
 const int mlp_size = 3;
 
 ImNetSmpl::ImNetSmpl()
@@ -47,6 +47,7 @@ void ImNetSmpl::init()
 	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7), true, false);
 	m_conv[1].init(m_conv[0].szOut(), 64, 1, 256, ct::Size(5, 5), true);
 	m_conv[2].init(m_conv[1].szOut(), 256, 1, 512, ct::Size(3, 3), true);
+	m_conv[3].init(m_conv[2].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
