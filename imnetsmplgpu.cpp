@@ -256,16 +256,29 @@ void ImNetSmplGpu::predicts(const QString &sdir)
 
 	std::cout << "predicted classes: ";
 
+	std::map<int, int> stat;
+
 	for(int i= 0; i < dir.count(); ++i){
 		QString s = dir.path() + "/" + dir[i];
 		QFileInfo f(s);
 		if(f.isFile()){
 			ct::Matf y = predict(s, false);
 			int cls = y.argmax(0, 1);
+			int cnt = stat[cls];
+			stat[cls] = cnt + 1;
 			std::cout << cls << ", ";
 		}
 	}
 	std::cout << std::endl;
+
+	int all = dir.count();
+	printf("\nStatisctics\n");
+	for(std::map<int, int>::iterator it = stat.begin(); it != stat.end(); it++){
+		int key = it->first;
+		int val = it->second;
+		printf("Pclass[%d]=%f\n", key, (double)val/all);
+	}
+
 	printf("Stop predicting\n");
 }
 
