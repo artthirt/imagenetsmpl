@@ -128,6 +128,8 @@ int main(int argc, char *argv[])
 	int pass = 1000;
 	double lr = 0.001;
 
+	printf("Startup\n");
+
 	if(contain(res, "pass")){
 		pass = std::stoi(res["pass"]);
 	}
@@ -140,7 +142,12 @@ int main(int argc, char *argv[])
 		lr = std::stod(res["lr"]);
 	}
 
-	printf("Parameters startup: pass=%d, batch=%d, lr=%f\n", pass, batch, lr);
+	printf("pass %d\n", pass);
+	printf("batch %d\n", batch);
+	printf("learning rate %f\n", lr);
+	printf("seed %d\n", seed);
+
+	//printf("Parameters startup: pass=%d, batch=%d, lr=%f\n", pass, batch, lr);
 
 	if(contain(res, "gpu")){
 		ImNetSmplGpu imnetSmpl;
@@ -148,23 +155,28 @@ int main(int argc, char *argv[])
 		imnetSmpl.setLearningRate(lr);
 
 		if(contain(res, "load")){
+			printf("load simple model '%s'\n", res["load"].c_str());
 			imnetSmpl.load_net(res["load"].c_str());
 		}
 
 		if(contain(res, "save")){
+			printf("save model to '%s'\n", res["load2"].c_str());
 			imnetSmpl.setSaveModelName(res["save"].c_str());
 		}
 
 		if(contain(res, "load2")){
+			printf("load model '%s'\n", res["load2"].c_str());
 			imnetSmpl.load_net2(res["load2"].c_str());
 		}
 
 		if(contain(res, "image")){
+			printf("predict image '%s'\n", res["image"].c_str());
 			imnetSmpl.predict(res["image"].c_str(), true);
 			return 0;
 		}
 
 		if(contain(res, "images")){
+			printf("predict images '%s'\n", res["images"].c_str());
 			imnetSmpl.predicts(res["images"].c_str());
 			return 0;
 		}
@@ -181,22 +193,27 @@ int main(int argc, char *argv[])
 		imnetSmpl.setLearningRate(lr);
 
 		if(contain(res, "load")){
+			printf("load simple model '%s'\n", res["load"].c_str());
 			imnetSmpl.load_net(res["load"].c_str());
 		}
 
 		if(contain(res, "save")){
+			printf("save model to '%s'\n", res["load2"].c_str());
 			imnetSmpl.setSaveModelName(res["save"].c_str());
 		}
 
 		if(contain(res, "load2")){
+			printf("load model '%s'\n", res["load2"].c_str());
 			imnetSmpl.load_net2(res["load2"].c_str());
 		}
 
 		if(contain(res, "image")){
+			printf("predict image '%s'\n", res["image"].c_str());
 			imnetSmpl.predict(res["image"].c_str(), true);
 		}
 
 		if(contain(res, "images")){
+			printf("predict images '%s'\n", res["images"].c_str());
 			imnetSmpl.predicts(res["images"].c_str());
 		}
 
