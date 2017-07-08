@@ -47,6 +47,9 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-images" && i < argc){
 			res["images"] = argv[i + 1];
 		}
+		if(str == "-seed" && i < argc){
+			res["seed"] = argv[i + 1];
+		}
 	}
 	return res;
 }
@@ -102,13 +105,19 @@ int main(int argc, char *argv[])
 			   "-images path/to/dir/with/images - check all images in directory\n"
 			   "-lr learing_rate				- learing rate (default: 0.001"
 			   "-save path/to/model				- name for saved train model"
-			   "-load2 path/to/model			- load extension model with information about sizes of layers and matrices");
+			   "-load2 path/to/model			- load extension model with information about sizes of layers and matrices"
+			   "-seed number					- seed for set random seed for train");
 		return 1;
 	}
 
 	QCoreApplication a(argc, argv);
 
-	ImReader ir(QString(res["imnet"].c_str()), 7);
+	int seed = 1;
+	if(contain(res, "seed")){
+		seed = std::stoi(res["seed"]);
+	}
+
+	ImReader ir(QString(res["imnet"].c_str()), seed);
 	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
 
 
