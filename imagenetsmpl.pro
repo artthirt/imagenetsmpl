@@ -36,7 +36,7 @@ win32{
     CONFIG(debug, debug|release){
         libs = -lopencv_core320d -lopencv_highgui320d -lopencv_imgproc320d -lopencv_imgcodecs320d
     }else{
-        libs = -lopencv_core320 -lopencv_highgui320 -lopencv_imgproc320 -lopencv_imgcodecs320
+        libs = -lopencv_core310 -lopencv_highgui310 -lopencv_imgproc310 -lopencv_imgcodecs310
     }
 
     INCLUDEPATH += $(OPENCV3_DIR)/include
