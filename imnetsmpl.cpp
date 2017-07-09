@@ -9,6 +9,8 @@
 #include "convnn2.h"
 #include "mlp.h"
 
+#include <chrono>
+
 const int cnv_size = 4;
 const int mlp_size = 3;
 
@@ -207,17 +209,40 @@ void ImNetSmpl::predicts(const QString &sdir)
 
 	std::cout << "predicted classes: ";
 
+	std::map<int, int> stat;
+
+	using namespace std::chrono;
+	milliseconds ms = duration_cast< milliseconds >(
+		system_clock::now().time_since_epoch()
+	);
+
 	for(int i= 0; i < dir.count(); ++i){
 		QString s = dir.path() + "/" + dir[i];
 		QFileInfo f(s);
 		if(f.isFile()){
 			ct::Matf y = predict(s, false);
 			int cls = y.argmax(0, 1);
+			int cnt = stat[cls];
+			stat[cls] = cnt + 1;
 			std::cout << cls << ", ";
 		}
 	}
 	std::cout << std::endl;
-	printf("Stop predicting\n");
+
+	ms = duration_cast< milliseconds >(
+		system_clock::now().time_since_epoch()
+	) - ms;
+	std::cout << std::endl;
+
+	int all = dir.count();
+	printf("\nStatisctics\n");
+	for(std::map<int, int>::iterator it = stat.begin(); it != stat.end(); it++){
+		int key = it->first;
+		int val = it->second;
+		printf("Pclass[%d]=%f\n", key, (double)val/all);
+	}
+
+	printf("Stop predicting. time=%f, fps=%f\n", (double)ms.count() / 1000., (double)all / ms.count() * 1000.);
 }
 
 float ImNetSmpl::loss(const ct::Matf &y, ct::Matf &y_)
@@ -373,18 +398,18 @@ void ImNetSmpl::load_net2(const QString &name)
 	m_conv.resize(cnvs);
 	m_mlp.resize(mlps);
 
-	printf("conv");
+	printf("conv\n");
 	for(size_t i = 0; i < m_conv.size(); ++i){
 		conv2::convnn<float> &cnv = m_conv[i];
 		cnv.read2(fs);
-		printf("layer %d: rows %d, cols %d", i, cnv.W[0].rows, cnv.W[0].cols);
+		printf("layer %d: rows %d, cols %d\n", i, cnv.W[0].rows, cnv.W[0].cols);
 	}
 
-	printf("mlp");
+	printf("mlp\n");
 	for(size_t i = 0; i < m_mlp.size(); ++i){
 		ct::mlp<float> &mlp = m_mlp[i];
 		mlp.read2(fs);
-		printf("layer %d: rows %d, cols %d", i, mlp.W.rows, mlp.W.cols);
+		printf("layer %d: rows %d, cols %d\n", i, mlp.W.rows, mlp.W.cols);
 	}
 
 	printf("model loaded.\n");

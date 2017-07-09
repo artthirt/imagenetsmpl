@@ -1,5 +1,7 @@
 #include "imnetsmplgpu.h"
 
+#include <chrono>
+
 #include <QDir>
 #include <QFile>
 
@@ -258,6 +260,11 @@ void ImNetSmplGpu::predicts(const QString &sdir)
 
 	std::map<int, int> stat;
 
+	using namespace std::chrono;
+	milliseconds ms = duration_cast< milliseconds >(
+		system_clock::now().time_since_epoch()
+	);
+
 	for(int i= 0; i < dir.count(); ++i){
 		QString s = dir.path() + "/" + dir[i];
 		QFileInfo f(s);
@@ -269,6 +276,10 @@ void ImNetSmplGpu::predicts(const QString &sdir)
 			std::cout << cls << ", ";
 		}
 	}
+
+	ms = duration_cast< milliseconds >(
+		system_clock::now().time_since_epoch()
+	) - ms;
 	std::cout << std::endl;
 
 	int all = dir.count();
@@ -279,7 +290,7 @@ void ImNetSmplGpu::predicts(const QString &sdir)
 		printf("Pclass[%d]=%f\n", key, (double)val/all);
 	}
 
-	printf("Stop predicting\n");
+	printf("Stop predicting. time=%f, fps=%f\n", (double)ms.count() / 1000., (double)all / ms.count() * 1000.);
 }
 
 

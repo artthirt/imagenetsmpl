@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	QCoreApplication a(argc, argv);
+	//QCoreApplication a(argc, argv);
 
 	int seed = 1;
 	if(contain(res, "seed")){
@@ -230,5 +230,5 @@ int main(int argc, char *argv[])
 
 //	ir.get_batch(X, y, 10);
 
-	return a.exec();
+	return 0;//a.exec();
 }
