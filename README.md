@@ -16,7 +16,7 @@ Model:
    3 -> input features - 2048, output classes - 1000, uses softmax
 
 Used:
-imagenetsmpl -gpu -load2 <path/to/model(model.bin_ext)> [-f /path/to/imagenet/dir -lr <learing rate>]\
+imagenetsmpl -gpu -pass number -batch number -load2 <path/to/model(model.bin_ext)> [-f /path/to/imagenet/dir -lr <learing rate>]\
               [-image /path/to/image(for predict classes)] [-images /path/to/dir/with/images(for predict all images in directories)]
 
 </pre>
