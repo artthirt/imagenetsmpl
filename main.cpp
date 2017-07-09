@@ -210,11 +210,13 @@ int main(int argc, char *argv[])
 		if(contain(res, "image")){
 			printf("predict image '%s'\n", res["image"].c_str());
 			imnetSmpl.predict(res["image"].c_str(), true);
+			return 0;
 		}
 
 		if(contain(res, "images")){
 			printf("predict images '%s'\n", res["images"].c_str());
 			imnetSmpl.predicts(res["images"].c_str());
+			return 0;
 		}
 
 		if(!contain(res, "imnet") || res["imnet"].empty()){
