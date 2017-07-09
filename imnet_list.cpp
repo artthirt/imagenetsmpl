@@ -1017,7 +1017,7 @@ size_t sizeof_imnet()
 
 size_t count_imnet_list = sizeof_imnet();
 
-int getNumberOfList(const std::__cxx11::string &name)
+int getNumberOfList(const std::string &name)
 {
 	std::string res = name;
 	std::transform(res.begin(), res.end(), res.begin(), ::tolower);
