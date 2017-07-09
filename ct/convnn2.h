@@ -489,7 +489,7 @@ public:
 
 		W[0].setSize(rows, cols);
 		W[0].randn(0, n);
-		B[0].setSize(1, convnn_abstract<T>::kernels);
+		B[0].setSize(convnn_abstract<T>::kernels, 1);
 		B[0].randn(0, n);
 
 		m_optim->init(W, B);
