@@ -110,7 +110,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 //		printf("--> backward\r");
 		backward(gD);
 
-		if((i % 80) == 0){
+		if((i % 80) == 0 && i > 0){
 			std::vector< ct::Matf > X;
 			ct::Matf y, p;
 
@@ -133,7 +133,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 			if(!idx)idx = 1;
 			printf("pass %d: loss=%f;\tpred=%f\n", i, ls / idx, pr / idx);
 		}
-		if((i % 80) == 0){
+		if((i % 80) == 0 && i > 0){
 //			save_net(m_model);
 			save_net2(m_save_model);
 		}
