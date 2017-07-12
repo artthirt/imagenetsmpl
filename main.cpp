@@ -163,6 +163,7 @@ int main(int argc, char *argv[])
 		ImNetSmplGpu imnetSmpl;
 		imnetSmpl.setReader(&ir);
 		imnetSmpl.setLearningRate(lr);
+		imnetSmpl.setUseBackConv(backconv);
 
 		if(contain(res, "load")){
 			printf("load simple model '%s'\n", res["load"].c_str());
@@ -201,6 +202,7 @@ int main(int argc, char *argv[])
 		ImNetSmpl imnetSmpl;
 		imnetSmpl.setReader(&ir);
 		imnetSmpl.setLearningRate(lr);
+		imnetSmpl.setUseBackConv(backconv);
 
 		if(contain(res, "load")){
 			printf("load simple model '%s'\n", res["load"].c_str());
