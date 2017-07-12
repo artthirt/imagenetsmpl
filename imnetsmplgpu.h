@@ -61,9 +61,13 @@ public:
 
 	void setModelName(const QString& name);
 
+	void setUseBackConv(bool val);
+
 private:
 	ImReader *m_reader;
 	double m_learningRate;
+
+	bool m_useBackConv;
 
 	std::vector< gpumat::conv2::convnn_gpu > m_conv;
 	std::vector< gpumat::mlp > m_mlp;

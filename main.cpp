@@ -50,6 +50,9 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-seed" && i < argc){
 			res["seed"] = argv[i + 1];
 		}
+		if(str == "-backconv" && i < argc){
+			res["backconv"] = argv[i + 1];
+		}
 	}
 	return res;
 }
@@ -106,7 +109,8 @@ int main(int argc, char *argv[])
 			   "-lr learing_rate				- learing rate (default: 0.001"
 			   "-save path/to/model				- name for saved train model"
 			   "-load2 path/to/model			- load extension model with information about sizes of layers and matrices"
-			   "-seed number					- seed for set random seed for train");
+			   "-seed number					- seed for set random seed for train"
+			   "-backconv bool					- use or not bakward pass for convolution");
 		return 1;
 	}
 
@@ -126,6 +130,7 @@ int main(int argc, char *argv[])
 
 	int batch = 10;
 	int pass = 1000;
+	bool backconv = true;
 	double lr = 0.001;
 
 	printf("Startup\n");
@@ -142,10 +147,15 @@ int main(int argc, char *argv[])
 		lr = std::stod(res["lr"]);
 	}
 
+	if(contain(res, "backconv")){
+		backconv = std::stoi(res["backconv"]);
+	}
+
 	printf("pass %d\n", pass);
 	printf("batch %d\n", batch);
 	printf("learning rate %f\n", lr);
 	printf("seed %d\n", seed);
+	printf("use backward convolution %d\n", backconv);
 
 	//printf("Parameters startup: pass=%d, batch=%d, lr=%f\n", pass, batch, lr);
 
@@ -160,7 +170,7 @@ int main(int argc, char *argv[])
 		}
 
 		if(contain(res, "save")){
-			printf("save model to '%s'\n", res["load2"].c_str());
+			printf("save model to '%s'\n", res["save"].c_str());
 			imnetSmpl.setSaveModelName(res["save"].c_str());
 		}
 

@@ -55,9 +55,13 @@ public:
 
 	void setModelName(const QString& name);
 
+	void setUseBackConv(bool val);
+
 private:
 	ImReader *m_reader;
 	double m_learningRate;
+
+	bool m_useBackConv;
 
 	std::vector< conv2::convnn<float> > m_conv;
 	std::vector< ct::mlp<float> > m_mlp;

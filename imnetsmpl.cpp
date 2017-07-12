@@ -17,6 +17,7 @@ const int mlp_size = 3;
 ImNetSmpl::ImNetSmpl()
 {
 	m_check_count = 50;
+	m_useBackConv = true;
 	m_learningRate = 0.0001;
 	m_reader = 0;
 	m_classes = 1000;
@@ -148,12 +149,14 @@ void ImNetSmpl::backward(const ct::Matf &Delta)
 	m_mlp[1].backward(m_mlp[2].DltA0);
 	m_mlp[0].backward(m_mlp[1].DltA0);
 
-	conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, deltas1);
-//	conv2::mat2vec(D2, m_pool_1.szK, deltas2);
+	if(m_useBackConv){
+		conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, deltas1);
+	//	conv2::mat2vec(D2, m_pool_1.szK, deltas2);
 
-	m_conv.back().backward(deltas1);
-	for(int i = m_conv.size() - 2; i >= 0; i--){
-		m_conv[i].backward(m_conv[i + 1].Dlt, i == 0);
+		m_conv.back().backward(deltas1);
+		for(int i = m_conv.size() - 2; i >= 0; i--){
+			m_conv[i].backward(m_conv[i + 1].Dlt, i == 0);
+		}
 	}
 
 	m_optim.pass(m_mlp);
@@ -422,4 +425,9 @@ void ImNetSmpl::setModelName(const QString &name)
 {
 	if(!name.isEmpty())
 		m_model = name;
+}
+
+void ImNetSmpl::setUseBackConv(bool val)
+{
+	m_useBackConv = val;
 }

@@ -10,7 +10,8 @@ const int mlp_size = 3;
 
 ImNetSmplGpu::ImNetSmplGpu()
 {
-	m_learningRate =0.001;
+	m_learningRate = 0.001;
+	m_useBackConv = true;
 	m_init = false;
 	m_check_count = 600;
 	m_classes = 1000;
@@ -165,20 +166,22 @@ void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 	m_mlp[1].backward(m_mlp[2].DltA0);
 	m_mlp[0].backward(m_mlp[1].DltA0);
 
-	gpumat::conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, m_deltas);
+	if(m_useBackConv){
+		gpumat::conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, m_deltas);
 
-//	printf("-cnv4        \r");
-	m_conv.back().backward(m_deltas);
+	//	printf("-cnv4        \r");
+		m_conv.back().backward(m_deltas);
 
-	for(int i = m_conv.size() - 2; i >= 0; i--){
-	//	printf("-cnv3        \r");
-		m_conv[i].backward(m_conv[i + 1].Dlt, i == 0);
-	//	printf("-cnv2        \r");
-//		m_conv[2].backward(m_conv[3].Dlt);
-//	//	printf("-cnv1        \r");
-//		m_conv[1].backward(m_conv[2].Dlt);
-//	//	printf("-cnv0        \r\n");
-//		m_conv[0].backward(m_conv[1].Dlt, true);
+		for(int i = m_conv.size() - 2; i >= 0; i--){
+		//	printf("-cnv3        \r");
+			m_conv[i].backward(m_conv[i + 1].Dlt, i == 0);
+		//	printf("-cnv2        \r");
+	//		m_conv[2].backward(m_conv[3].Dlt);
+	//	//	printf("-cnv1        \r");
+	//		m_conv[1].backward(m_conv[2].Dlt);
+	//	//	printf("-cnv0        \r\n");
+	//		m_conv[0].backward(m_conv[1].Dlt, true);
+		}
 	}
 
 	m_optim.pass(m_mlp);
@@ -477,4 +480,9 @@ void ImNetSmplGpu::setModelName(const QString &name)
 {
 	if(!name.isEmpty())
 		m_model = name;
+}
+
+void ImNetSmplGpu::setUseBackConv(bool val)
+{
+	m_useBackConv = val;
 }
