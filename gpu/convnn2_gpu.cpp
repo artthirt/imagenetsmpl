@@ -235,7 +235,6 @@ void convnn_gpu::forward(const std::vector<gpumat::GpuMat> *_pX, gpumat::etypefu
 		gpumat::conv2::im2cols(*pX, szA0, channels, szW, stride, Xc, szOut);
 	}
 
-#pragma omp parallel for
 	for(int i = 0; i < Xc.size(); ++i){
 		gpumat::GpuMat& Xi = Xc[i];
 		gpumat::GpuMat& A1i = A1[i];
@@ -243,7 +242,6 @@ void convnn_gpu::forward(const std::vector<gpumat::GpuMat> *_pX, gpumat::etypefu
 		gpumat::biasPlus(A1i, B[0]);
 	}
 
-#pragma omp parallel for
 	for(int i = 0; i < A1.size(); ++i){
 		gpumat::GpuMat& Ao = A1[i];
 		switch (m_func) {
@@ -307,7 +305,6 @@ void convnn_gpu::backcnv(const std::vector<gpumat::GpuMat> &D, std::vector<gpuma
 {
 //	DA1.resize(A1.size());
 	/// A1 -> DA1
-#pragma omp parallel for
 	for(int i = 0; i < D.size(); ++i){
 		switch (m_func) {
 			case ct::LINEAR:
@@ -332,12 +329,10 @@ void convnn_gpu::backcnv(const std::vector<gpumat::GpuMat> &D, std::vector<gpuma
 
 	/// D * DA1
 	if(D.data() != DS.data()){
-#pragma omp parallel for
 		for(int i = 0; i < D.size(); ++i){
 			gpumat::elemwiseMult(D[i], A1[i], DS[i]);
 		}
 	}else{
-#pragma omp parallel for
 		for(int i = 0; i < D.size(); ++i){
 			gpumat::elemwiseMult(DS[i], A1[i]);
 		}
@@ -387,11 +382,8 @@ void convnn_gpu::backward(const std::vector<gpumat::GpuMat> &D, bool last_level)
 	}
 #endif
 
-//	qDebug("backward: Xc[%dx%d]' x D[%dx%d]", Xc[0].rows, Xc[0].cols, dSub2[0].rows, dSub2[0].cols);
-
 	vgW.resize(D.size());
 	vgB.resize(D.size());
-#pragma omp parallel for
 	for(int i = 0; i < D.size(); ++i){
 		gpumat::GpuMat& Xci		= Xc[i];
 		gpumat::GpuMat& dSubi	= dSub2[i];
@@ -399,17 +391,10 @@ void convnn_gpu::backward(const std::vector<gpumat::GpuMat> &D, bool last_level)
 		gpumat::GpuMat& vgBi	= vgB[i];
 		gpumat::matmulT1_shared(Xci, dSubi, Wi);
 
-//		gpumat::mulval(Wi, (double)1. / (Xci.total()));
-//		gpumat::save_gmat(Xci, "Xgi.txt");
-//		gpumat::save_gmat(dSubi, "Dgi.txt");
-//		gpumat::save_gmat(Wi, "Wgi.txt");
 		vgBi.swap_dims();
 		sumRows(dSubi, vgBi /*, (double)1. / (Xci.total())*/);
 		vgBi.swap_dims();
 	}
-//	gpumat::save_gmat(vgW[0], "Wg1.txt");
-//	gpumat::save_gmat(vgW[1], "Wg2.txt");
-//	gpumat::save_gmat(vgW[2], "Wg3.txt");
 
 	gW[0].zeros();
 	gB[0].zeros();
@@ -434,7 +419,6 @@ void convnn_gpu::backward(const std::vector<gpumat::GpuMat> &D, bool last_level)
 		Dlt.resize(D.size());
 
 		Dc.resize(D.size());
-#pragma omp parallel for
 		for(int i = 0; i < D.size(); ++i){
 			gpumat::GpuMat& Dci = Dc[i];
 			gpumat::matmulT2_shared(dSub2[i], W[0], Dci);
@@ -446,11 +430,6 @@ void convnn_gpu::backward(const std::vector<gpumat::GpuMat> &D, bool last_level)
 #if 0
 		check_deriv(Dc, szA1, szA0, channels, szW, stride, Dlt);
 #endif
-
-//		gpumat::write_gmat("Dlt5.bin", Dlt[0]);
-		//gpumat::save_gmat(dSub[0], "dSub.txt");
-//		gpumat::save_gmat(Dlt[0], "Dltgi.txt");
-		//gpumat::save_gmat(Dc[0], "Dc.txt");
 	}
 
 	m_optim->pass(gW, gB, W, B);
