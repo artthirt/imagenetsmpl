@@ -63,7 +63,13 @@ void ImNetSmplGpu::init()
 
 	for(int i = 0; i < m_conv.size(); ++i){
 		m_conv[i].setAlpha(m_learningRate);
+		m_conv[i].setDropout(0.93);
 	}
+
+	for(int i = 0; i < m_mlp.size(); ++i){
+		m_mlp[i].setDropout(0.93);
+	}
+
 
 	m_init = true;
 }
@@ -101,7 +107,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 
 //		std::cout << "pass " << i << "\r";
 //		qDebug("--> pass %d", i);
-		forward(gX, &gy_);
+		forward(gX, &gy_, true);
 
 //		gpumat::save_gmat(*gy_, "tmp1.txt");
 
@@ -140,8 +146,16 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 	}
 }
 
-void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat **pyOut)
+void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat **pyOut, bool dropout)
 {
+	for(int i = 0; i < m_conv.size(); ++i){
+		m_conv[i].setDropout(dropout);
+	}
+
+	for(int i = 0; i < m_mlp.size(); ++i){
+		m_mlp[i].setDropout(dropout);
+	}
+
 	m_conv[0].forward(&X, gpumat::RELU);
 	for(size_t i = 1; i < m_conv.size(); ++i){
 		m_conv[i].forward(&m_conv[i - 1].XOut(), gpumat::RELU);
