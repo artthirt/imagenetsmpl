@@ -100,7 +100,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 		std::vector< ct::Matf > X;
 		ct::Matf y;
 
-		m_reader->get_batch(X, y, batch, true);
+		m_reader->get_batch(X, y, batch, true, true);
 
 		get_gX(X, gX);
 		gpumat::convert_to_gpu(y, gy);
@@ -135,6 +135,9 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 				ls += loss(gy, *gy_);
 				p = predict(*gy_);
 				pr += check(y, p);
+
+				printf("test: cur %d, all %d    \r", i, m_check_count);
+				std::cout << std::flush;
 			}
 			if(!idx)idx = 1;
 			printf("pass %d: loss=%f;\tpred=%f\n", i, ls / idx, pr / idx);

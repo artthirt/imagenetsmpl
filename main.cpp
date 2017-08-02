@@ -67,10 +67,10 @@ void test()
 	a2.fill(3);
 	a3 = ct::Matf::eye(10, 14);
 
-	std::vector< ct::Matf* > mats, mats1;
-	mats.push_back(&a1);
-	mats.push_back(&a2);
-	mats.push_back(&a3);
+	std::vector< ct::Matf > mats, mats1;
+	mats.push_back(a1);
+	mats.push_back(a2);
+	mats.push_back(a3);
 	ct::hconcat(mats, res);
 
 	std::cout << res.print() << std::endl;
@@ -80,9 +80,9 @@ void test()
 	cols.push_back(15);
 	cols.push_back(14);
 
-	mats1.push_back(&b1);
-	mats1.push_back(&b2);
-	mats1.push_back(&b3);
+	mats1.push_back(b1);
+	mats1.push_back(b2);
+	mats1.push_back(b3);
 
 	ct::hsplit(res, cols, mats1);
 

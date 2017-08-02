@@ -113,7 +113,7 @@ void ImReader::init()
 
 static std::mt19937 _rnd;
 
-void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool flip)
+void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool flip, bool aug)
 {
 	if(m_files.empty())
 		return;
@@ -171,7 +171,15 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 //			fl = bn(_rnd);
 //		}
 
-		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], bflip[i]);
+		int xoff = 0, yoff = 0;
+
+		if(aug){
+			std::normal_distribution<float> nd(0, IM_WIDTH * 0.05);
+			xoff = nd(m_gt);
+			yoff = nd(m_gt);
+		}
+
+		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], bflip[i], aug, Point(xoff, yoff));
 		if(!Xi.empty()){
 			X[i] = Xi;
 			std::string n = m_dirs[id1];
@@ -189,7 +197,20 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 //	std::cout << "indexes: " << ss2.str() << std::endl;
 }
 
-ct::Matf ImReader::get_image(const std::string &name, bool flip)
+void offsetImage(cv::Mat &image, cv::Scalar bordercolour, int xoffset, int yoffset)
+{
+	using namespace cv;
+	float mdata[] = {
+		1, 0, xoffset,
+		0, 1, yoffset
+	};
+
+	Mat M(2, 3, CV_32F, mdata);
+	warpAffine(image, image, M, image.size());
+}
+
+
+ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const Point &off)
 {
 	ct::Matf res;
 
@@ -202,6 +223,11 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip)
 	if(flip){
 		cv::flip(m, m, 1);
 	}
+
+	if(aug && off.x != 0 && off.y != 0){
+		offsetImage(m, cv::Scalar(0), off.x, off.y);
+	}
+
 
 //	cv::imwrite("ss.bmp", m);
 
