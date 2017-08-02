@@ -116,7 +116,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 //		printf("--> backward\r");
 		backward(gD);
 
-		if((i % 200) == 0 && i > 0){
+		if((i % 200) == 0 && i > 0 || i == 30){
 			std::vector< ct::Matf > X;
 			ct::Matf y, p;
 
