@@ -91,11 +91,46 @@ void test()
 	std::cout << "b3\n" << b3.print() << std::endl;
 }
 
+void test2()
+{
+	ct::Matf A(5, 10), B = ct::Matf::ones(3, 3), C;
+
+	for(int i = 0, k = 1; i < A.rows; ++i){
+		float *dA = A.ptr(i);
+		for(int j = 0; j < A.cols; ++j, ++k){
+			dA[j] = k;
+		}
+	}
+//	A = A.t();
+
+	std::cout << A.print() << std::endl;
+
+	ct::Size szOut;
+
+	conv2::conv2(A, ct::Size(10, 5), 1, 1, B, ct::Size(3, 3), C, szOut, conv2::SAME);
+
+	C.rows = szOut.height;
+	C.cols = szOut.width;
+
+	std::cout << C.print() << std::endl;
+
+	gpumat::GpuMat g_A, g_B, g_C;
+	gpumat::convert_to_gpu(A, g_A);
+	gpumat::convert_to_gpu(B, g_B);
+
+	gpumat::conv2(g_A, ct::Size(10, 5), 1, 1, g_B, ct::Size(3, 3), g_C, szOut, gpumat::SAME);
+
+	g_C.rows = szOut.height;
+	g_C.cols = szOut.width;
+
+	std::cout << g_C.print() << std::endl;
+}
+
 int main(int argc, char *argv[])
 {
 	std::map<std::string, std::string> res = parseArgs(argc, argv);
 
-//	test();
+//	test2();
 
 	if(res.empty()){
 		printf("Usage: app [OPTIONS]\n"

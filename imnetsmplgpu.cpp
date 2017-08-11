@@ -164,7 +164,7 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 		m_conv[i].forward(&m_conv[i - 1].XOut(), gpumat::RELU);
 	}
 
-	gpumat::conv2::vec2mat(m_conv.back().XOut(), m_A1);
+	gpumat::vec2mat(m_conv.back().XOut(), m_A1);
 
 	m_mlp[0].forward(&m_A1);
 	m_mlp[1].forward(&m_mlp[0].A1);
@@ -184,7 +184,7 @@ void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 	m_mlp[0].backward(m_mlp[1].DltA0);
 
 	if(m_useBackConv){
-		gpumat::conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, m_deltas);
+		gpumat::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, m_deltas);
 
 	//	printf("-cnv4        \r");
 		m_conv.back().backward(m_deltas);
@@ -351,7 +351,7 @@ void ImNetSmplGpu::save_net(const QString &name)
 //	fs.write((char*)&m_szA0, sizeof(m_szA0));
 
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		gpumat::conv2::convnn_gpu &cnv = m_conv[i];
+		gpumat::convnn_gpu &cnv = m_conv[i];
 		cnv.write(fs);
 	}
 
@@ -387,7 +387,7 @@ void ImNetSmplGpu::load_net(const QString &name)
 	init();
 
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		gpumat::conv2::convnn_gpu &cnv = m_conv[i];
+		gpumat::convnn_gpu &cnv = m_conv[i];
 		cnv.read(fs);
 	}
 
@@ -426,7 +426,7 @@ void ImNetSmplGpu::save_net2(const QString &name)
 	fs.write((char*)&mlps, sizeof(mlps));
 
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		gpumat::conv2::convnn_gpu &cnv = m_conv[i];
+		gpumat::convnn_gpu &cnv = m_conv[i];
 		cnv.write2(fs);
 	}
 
@@ -475,7 +475,7 @@ void ImNetSmplGpu::load_net2(const QString &name)
 
 	printf("conv\n");
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		gpumat::conv2::convnn_gpu &cnv = m_conv[i];
+		gpumat::convnn_gpu &cnv = m_conv[i];
 		cnv.read2(fs);
 		printf("layer %d: rows %d, cols %d\n", i, cnv.W[0].rows, cnv.W[0].cols);
 	}

@@ -69,7 +69,7 @@ private:
 
 	bool m_useBackConv;
 
-	std::vector< gpumat::conv2::convnn_gpu > m_conv;
+	std::vector< gpumat::convnn_gpu > m_conv;
 	std::vector< gpumat::mlp > m_mlp;
 	int m_classes;
 	gpumat::GpuMat m_A1;
