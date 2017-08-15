@@ -40,13 +40,13 @@ void ImNetSmplGpu::init()
 //		m_conv[i].setOptimizer(&m_sg[i]);
 //	}
 
-	m_conv[0].init(ct::Size(W, H), 3, 1, 64, ct::Size(3, 3), true, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 1, 64, ct::Size(3, 3), true);
-	m_conv[2].init(m_conv[1].szOut(), 64, 1, 128, ct::Size(3, 3), true);
-	m_conv[3].init(m_conv[2].szOut(), 128, 1, 128, ct::Size(3, 3), true);
-	m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), false);
-	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), true);
-	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
+	m_conv[0].init(ct::Size(W, H), 3, 1, 64, ct::Size(3, 3), gpumat::LEAKYRELU, true, false);
+	m_conv[1].init(m_conv[0].szOut(), 64, 1, 64, ct::Size(3, 3), gpumat::LEAKYRELU, true);
+	m_conv[2].init(m_conv[1].szOut(), 64, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, true);
+	m_conv[3].init(m_conv[2].szOut(), 128, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, true);
+	m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false);
+	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true);
+	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(3, 3), gpumat::LEAKYRELU, false);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -54,9 +54,9 @@ void ImNetSmplGpu::init()
 
 	m_mlp.resize(mlp_size);
 
-	m_mlp[0].init(outFeatures, 4096, gpumat::GPU_FLOAT);
+	m_mlp[0].init(outFeatures, 4096, gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
 //	m_mlp[1].init(4096, 2048, gpumat::GPU_FLOAT);
-	m_mlp[1].init(4096, m_classes, gpumat::GPU_FLOAT);
+	m_mlp[1].init(4096, m_classes, gpumat::GPU_FLOAT, gpumat::SOFTMAX);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
@@ -159,20 +159,17 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 		m_mlp[i].setDropout(dropout);
 	}
 
-	m_conv[0].forward(&X, gpumat::LEAKYRELU);
+	m_conv[0].forward(&X);
 	for(size_t i = 1; i < m_conv.size(); ++i){
-		m_conv[i].forward(&m_conv[i - 1].XOut(), gpumat::LEAKYRELU);
+		m_conv[i].forward(&m_conv[i - 1].XOut());
 	}
 
 	gpumat::vec2mat(m_conv.back().XOut(), m_A1);
 
 	gpumat::GpuMat *pX = &m_A1;
-	gpumat::etypefunction func = gpumat::LEAKYRELU;
 	for(size_t i = 0; i < m_mlp.size(); ++i){
 		gpumat::mlp& mlp = m_mlp[i];
-		if(i == m_mlp.size() - 1)
-			func = gpumat::SOFTMAX;
-		mlp.forward(pX, func);
+		mlp.forward(pX);
 		pX = &mlp.A1;
 //		m_mlp[0].forward(&m_A1);
 //		m_mlp[1].forward(&m_mlp[0].A1);
