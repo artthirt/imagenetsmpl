@@ -96,6 +96,8 @@ void ImNetSmpl::doPass(int pass, int batch)
 
 		ct::Matf Dlt = ct::subIndOne(y_, y);
 
+		ct::save_mat(Dlt, "dlt.txt");
+
 //		printf("--> backward\r");
 		backward(Dlt);
 
@@ -141,7 +143,7 @@ void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut)
 		ct::mlp_mixed& mlp = m_mlp[i];
 		if(i == m_mlp.size() - 1)
 			func = ct::SOFTMAX;
-		mlp.forward(pX);
+		mlp.forward(pX, func);
 		pX = &mlp.A1;
 //		m_mlp[0].forward(&m_A1);
 //		m_mlp[1].forward(&m_mlp[0].A1);
@@ -268,7 +270,7 @@ void ImNetSmpl::predicts(const QString &sdir)
 float ImNetSmpl::loss(const ct::Matf &y, ct::Matf &y_)
 {
 	ct::Matf r = ct::subIndOne(y_, y);
-	r = ct::elemwiseSqr(r);
+	ct::v_elemwiseSqr(r);
 	float f = r.sum() / r.rows;
 
 	return f;

@@ -172,7 +172,7 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 		gpumat::mlp& mlp = m_mlp[i];
 		if(i == m_mlp.size() - 1)
 			func = gpumat::SOFTMAX;
-		mlp.forward(pX);
+		mlp.forward(pX, func);
 		pX = &mlp.A1;
 //		m_mlp[0].forward(&m_A1);
 //		m_mlp[1].forward(&m_mlp[0].A1);
