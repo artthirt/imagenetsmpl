@@ -255,7 +255,41 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const
 			dX3[idx] = v[x * m.channels() + 2];
 		}
 	}
+
+	res.clipRange(0, 1);
+
+//	cv::Mat out;
+//	getMat(res, &out, ct::Size(IM_WIDTH, IM_HEIGHT));
+//	cv::imwrite("tmp.jpg", out);
+
 	return res;
+}
+
+void ImReader::getMat(const ct::Matf &in, cv::Mat *out, const ct::Size sz)
+{
+	if(in.empty() || !out)
+		return;
+
+	int channels = in.total() / (sz.area());
+	if(channels != 3)
+		return;
+
+	*out = cv::Mat(sz.height, sz.width, CV_32FC3);
+
+	float* dX1 = in.ptr() + 0 * out->rows * out->cols;
+	float* dX2 = in.ptr() + 1 * out->rows * out->cols;
+	float* dX3 = in.ptr() + 2 * out->rows * out->cols;
+
+	for(int y = 0; y < out->rows; ++y){
+		float *v = out->ptr<float>(y);
+		for(int x = 0; x < out->cols; ++x){
+			int off = y * out->cols + x;
+			v[x * out->channels() + 0] = dX1[off];
+			v[x * out->channels() + 1] = dX2[off];
+			v[x * out->channels() + 2] = dX3[off];
+		}
+	}
+	out->convertTo(*out, CV_8UC3, 255.);
 }
 
 void ImReader::setImagePath(const QString &path)

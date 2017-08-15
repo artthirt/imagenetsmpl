@@ -11,8 +11,8 @@
 
 #include <chrono>
 
-const int cnv_size = 4;
-const int mlp_size = 3;
+const int cnv_size = 7;
+const int mlp_size = 2;
 
 ImNetSmpl::ImNetSmpl()
 {
@@ -47,10 +47,13 @@ void ImNetSmpl::init()
 //		m_conv[i].setOptimizer(&m_mg[i]);
 //	}
 
-	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7), true, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 1, 256, ct::Size(5, 5), true);
-	m_conv[2].init(m_conv[1].szOut(), 256, 1, 512, ct::Size(3, 3), true);
-	m_conv[3].init(m_conv[2].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
+	m_conv[0].init(ct::Size(W, H), 3, 1, 64, ct::Size(3, 3), true, false);
+	m_conv[1].init(m_conv[0].szOut(), 64, 1, 64, ct::Size(3, 3), true);
+	m_conv[2].init(m_conv[1].szOut(), 64, 1, 128, ct::Size(3, 3), true);
+	m_conv[3].init(m_conv[2].szOut(), 128, 1, 128, ct::Size(3, 3), true);
+	m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), false);
+	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), true);
+	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(3, 3), false);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -59,8 +62,8 @@ void ImNetSmpl::init()
 	m_mlp.resize(mlp_size);
 
 	m_mlp[0].init(outFeatures, 4096);
-	m_mlp[1].init(4096, 2048);
-	m_mlp[2].init(2048, m_classes);
+//	m_mlp[1].init(4096, 2048);
+	m_mlp[1].init(4096, m_classes);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
@@ -86,7 +89,7 @@ void ImNetSmpl::doPass(int pass, int batch)
 		std::vector< ct::Matf > X;
 		ct::Matf y, y_;
 
-		m_reader->get_batch(X, y, batch);
+		m_reader->get_batch(X, y, batch, true, true);
 
 //		qDebug("--> pass %d", i);
 		forward(X, y_);
@@ -125,29 +128,43 @@ void ImNetSmpl::doPass(int pass, int batch)
 
 void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut)
 {
-	m_conv[0].forward(&X, ct::RELU);
+	m_conv[0].forward(&X, ct::LEAKYRELU);
 	for(size_t i = 1; i < m_conv.size(); ++i){
-		m_conv[i].forward(m_conv[i - 1], ct::RELU);
+		m_conv[i].forward(m_conv[i - 1], ct::LEAKYRELU);
 	}
-
 
 	conv2::vec2mat(m_conv.back().XOut(), m_A1);
 
-	m_mlp[0].forward(&m_A1);
-	m_mlp[1].forward(&m_mlp[0].A1);
-	m_mlp[2].forward(&m_mlp[1].A1, ct::SOFTMAX);
+	ct::Matf *pX = &m_A1;
+	ct::etypefunction func = ct::LEAKYRELU;
+	for(size_t i = 0; i < m_mlp.size(); ++i){
+		ct::mlp_mixed& mlp = m_mlp[i];
+		if(i == m_mlp.size() - 1)
+			func = ct::SOFTMAX;
+		mlp.forward(pX);
+		pX = &mlp.A1;
+//		m_mlp[0].forward(&m_A1);
+//		m_mlp[1].forward(&m_mlp[0].A1);
+//		m_mlp[2].forward(&m_mlp[1].A1, gpumat::SOFTMAX);
+	}
 
 	yOut = m_mlp.back().A1;
 }
 
 void ImNetSmpl::backward(const ct::Matf &Delta)
 {
-	if(m_mlp.empty() || m_mlp[2].A1.empty())
+	if(m_mlp.empty() || m_mlp.back().A1.empty())
 		return;
 
-	m_mlp.back().backward(Delta);
-	m_mlp[1].backward(m_mlp[2].DltA0);
-	m_mlp[0].backward(m_mlp[1].DltA0);
+	ct::Matf *pX = (ct::Matf*)&Delta;
+	for(int i = m_mlp.size() - 1; i >= 0; i--){
+		ct::mlp_mixed& mlp = m_mlp[i];
+		mlp.backward(*pX);
+		pX = &mlp.DltA0;
+//	m_mlp.back().backward(Delta);
+//	m_mlp[1].backward(m_mlp[2].DltA0);
+//	m_mlp[0].backward(m_mlp[1].DltA0);
+	}
 
 	if(m_useBackConv){
 		conv2::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, deltas1);
@@ -280,7 +297,7 @@ void ImNetSmpl::save_net(const QString &name)
 //	fs.write((char*)&m_szA0, sizeof(m_szA0));
 
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		conv2::convnn<float> &cnv = m_conv[i];
+		conv2::convnn2_mixed &cnv = m_conv[i];
 		cnv.write(fs);
 	}
 
@@ -315,7 +332,7 @@ void ImNetSmpl::load_net(const QString &name)
 	init();
 
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		conv2::convnn<float> &cnv = m_conv[i];
+		conv2::convnn2_mixed &cnv = m_conv[i];
 		cnv.read(fs);
 	}
 
@@ -354,7 +371,7 @@ void ImNetSmpl::save_net2(const QString &name)
 	fs.write((char*)&mlps, sizeof(mlps));
 
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		conv2::convnn<float> &cnv = m_conv[i];
+		conv2::convnn2_mixed &cnv = m_conv[i];
 		cnv.write2(fs);
 	}
 
@@ -403,14 +420,14 @@ void ImNetSmpl::load_net2(const QString &name)
 
 	printf("conv\n");
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		conv2::convnn<float> &cnv = m_conv[i];
+		conv2::convnn2_mixed &cnv = m_conv[i];
 		cnv.read2(fs);
 		printf("layer %d: rows %d, cols %d\n", i, cnv.W[0].rows, cnv.W[0].cols);
 	}
 
 	printf("mlp\n");
 	for(size_t i = 0; i < m_mlp.size(); ++i){
-		ct::mlp<float> &mlp = m_mlp[i];
+		ct::mlp_mixed &mlp = m_mlp[i];
 		mlp.read2(fs);
 		printf("layer %d: rows %d, cols %d\n", i, mlp.W.rows, mlp.W.cols);
 	}
