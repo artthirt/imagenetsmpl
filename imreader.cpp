@@ -11,6 +11,10 @@
 #include "imnet_list.h"
 
 #include <random>
+
+
+static std::mt19937 _rnd;
+
 ///////////////////////
 
 double check(const ct::Matf& classes, const ct::Matf& predicted)
@@ -71,6 +75,7 @@ cv::Mat GetSquareImage( const cv::Mat& img, int target_width = 500 )
 ImReader::ImReader(int seed)
 {
 	cv::setRNGSeed(seed);
+	_rnd.seed(seed);
 }
 
 ImReader::ImReader(const QString& pathToImages, int seed)
@@ -110,8 +115,6 @@ void ImReader::init()
 	}
 	qDebug() << "DIRS" << m_dirs.size();
 }
-
-static std::mt19937 _rnd;
 
 void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool flip, bool aug)
 {
