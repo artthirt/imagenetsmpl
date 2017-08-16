@@ -16,7 +16,7 @@ const int mlp_size = 2;
 
 ImNetSmpl::ImNetSmpl()
 {
-	m_check_count = 50;
+	m_check_count = 200;
 	m_useBackConv = true;
 	m_learningRate = 0.0001;
 	m_reader = 0;
@@ -75,7 +75,7 @@ void ImNetSmpl::init()
 	m_init = true;
 }
 
-void ImNetSmpl::doPass(int pass, int batch)
+void ImNetSmpl::doPass(int passes, int batch)
 {
 	if(!m_reader)
 		return;
@@ -83,8 +83,8 @@ void ImNetSmpl::doPass(int pass, int batch)
 	if(!m_init)
 		init();
 
-	for(int i = 0; i < pass; ++i){
-		std::cout << "pass " << i << "\r" << std::flush;
+	for(int pass = 0; pass < passes; ++pass){
+		std::cout << "pass " << pass << "\r" << std::flush;
 
 		std::vector< ct::Matf > X;
 		ct::Matf y, y_;
@@ -101,7 +101,7 @@ void ImNetSmpl::doPass(int pass, int batch)
 //		printf("--> backward\r");
 		backward(Dlt);
 
-		if((i % 20) == 0 && i > 0){
+		if((pass % 40) == 0 && pass > 0){
 			std::vector< ct::Matf > X;
 			ct::Matf y, y_, p;
 
@@ -118,11 +118,14 @@ void ImNetSmpl::doPass(int pass, int batch)
 				ls += loss(y, y_);
 				p = predict(y_);
 				pr += check(y, p);
+
+				printf("test: cur %d, all %d    \r", i, m_check_count);
+				std::cout << std::flush;
 			}
 			if(!idx)idx = 1;
-			printf("pass %d: loss=%f;\tpred=%f\n", i, ls / idx, pr / idx);
+			printf("pass %d: loss=%f;\tpred=%f\n", pass, ls / idx, pr / idx);
 		}
-		if((i % 40) == 0 && i > 0){
+		if((pass % 40) == 0 && pass > 0){
 			save_net2(m_save_model);
 		}
 	}
