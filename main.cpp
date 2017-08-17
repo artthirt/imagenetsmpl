@@ -139,11 +139,34 @@ void test2()
 	std::cout << g_C.print() << std::endl;
 }
 
+void test3()
+{
+	ct::Matf W(20, 10), B(1, 10), A(13, 20);
+
+	W.randn(0, 1);
+	B.randn(0, 1);
+	A.randn(0, 1);
+
+	gpumat::GpuMat gW, gA, gB, gC, gD;
+	gpumat::convert_to_gpu(A, gA);
+	gpumat::convert_to_gpu(B, gB);
+	gpumat::convert_to_gpu(W, gW);
+
+	gpumat::matmul(gA, gW, gC);
+	gpumat::biasPlus(gC, gB);
+	gpumat::leakyReLu(gC, 0.1);
+	gpumat::save_gmat(gC, "C1.txt");
+
+	gpumat::m2mpbaf(gA, gW, gB, gpumat::LEAKYRELU, gD, 0.1);
+	gpumat::save_gmat(gD, "C2.txt");
+}
+
 int main(int argc, char *argv[])
 {
 	std::map<std::string, std::string> res = parseArgs(argc, argv);
 
 //	test2();
+//	test3();
 
 	if(res.empty()){
 		printf("Usage: app [OPTIONS]\n"
