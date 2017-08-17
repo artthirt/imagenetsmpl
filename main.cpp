@@ -93,7 +93,7 @@ void test()
 
 void test2()
 {
-	ct::Matf A(5, 10), B = ct::Matf::ones(3, 3), C;
+	ct::Matf A(5, 10), B = ct::Matf::ones(3, 3), C, D;
 
 	for(int i = 0, k = 1; i < A.rows; ++i){
 		float *dA = A.ptr(i);
@@ -109,10 +109,23 @@ void test2()
 
 	conv2::conv2(A, ct::Size(10, 5), 1, 1, B, ct::Size(3, 3), C, szOut, conv2::SAME);
 
+	int rows = C.rows;
+	int cols = C.cols;
+
 	C.rows = szOut.height;
 	C.cols = szOut.width;
 
 	std::cout << C.print() << std::endl;
+
+	C.rows = rows;
+	C.cols = cols;
+
+	conv2::conv2_transpose(C, ct::Size(10, 5), 1, 1, B, ct::Size(3, 3), szOut, D, conv2::SAME);
+
+	D.rows = szOut.height;
+	D.cols = szOut.width;
+
+	std::cout << D.print() << std::endl;
 
 	gpumat::GpuMat g_A, g_B, g_C;
 	gpumat::convert_to_gpu(A, g_A);
