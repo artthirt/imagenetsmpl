@@ -102,7 +102,7 @@ void ImNetSmpl::doPass(int passes, int batch)
 //		printf("--> backward\r");
 		backward(Dlt);
 
-		if((pass % m_check_pass) == 0 && pass > 0 || m_check_pass == 30){
+		if((pass % m_check_pass) == 0 && pass > 0 || pass == 30){
 			std::vector< ct::Matf > X;
 			ct::Matf y, y_, p;
 
