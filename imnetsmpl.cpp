@@ -48,13 +48,13 @@ void ImNetSmpl::init()
 //		m_conv[i].setOptimizer(&m_mg[i]);
 //	}
 
-	m_conv[0].init(ct::Size(W, H), 3, 1, 64, ct::Size(3, 3), ct::LEAKYRELU, true, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 1, 64, ct::Size(3, 3), ct::LEAKYRELU, true);
-	m_conv[2].init(m_conv[1].szOut(), 64, 1, 128, ct::Size(3, 3), ct::LEAKYRELU, true);
-	m_conv[3].init(m_conv[2].szOut(), 128, 1, 128, ct::Size(3, 3), ct::LEAKYRELU, true);
+	m_conv[0].init(ct::Size(W, H), 3, 2, 64, ct::Size(3, 3), ct::LEAKYRELU, false, false);
+	m_conv[1].init(m_conv[0].szOut(), 64, 2, 64, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[2].init(m_conv[1].szOut(), 64, 2, 128, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[3].init(m_conv[2].szOut(), 128, 2, 128, ct::Size(3, 3), ct::LEAKYRELU, false);
 	m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, false);
-	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, true);
-	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(3, 3), ct::LEAKYRELU, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -71,6 +71,10 @@ void ImNetSmpl::init()
 
 	for(int i = 0; i < m_conv.size(); ++i){
 		m_conv[i].setAlpha(m_learningRate);
+	}
+
+	for(int i = 0; i < m_mlp.size(); ++i){
+		m_mlp[i].setDropout(0.93f);
 	}
 
 	m_init = true;
@@ -93,7 +97,7 @@ void ImNetSmpl::doPass(int passes, int batch)
 		m_reader->get_batch(X, y, batch, true, true);
 
 //		qDebug("--> pass %d", i);
-		forward(X, y_);
+		forward(X, y_, true);
 
 		ct::Matf Dlt = ct::subIndOne(y_, y);
 
@@ -132,8 +136,12 @@ void ImNetSmpl::doPass(int passes, int batch)
 	}
 }
 
-void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut)
+void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut, bool dropout)
 {
+	for(int i = 0; i < m_mlp.size(); ++i){
+		m_mlp[i].setDropout(dropout);
+	}
+
 	m_conv[0].forward(&X);
 	for(size_t i = 1; i < m_conv.size(); ++i){
 		m_conv[i].forward(m_conv[i - 1]);
