@@ -77,6 +77,7 @@ private:
 	ct::MlpOptimMixed m_optim;
 	QString m_model;
 	QString m_save_model;
+	int m_check_pass;
 
 
 	int m_check_count;

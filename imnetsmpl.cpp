@@ -16,7 +16,8 @@ const int mlp_size = 2;
 
 ImNetSmpl::ImNetSmpl()
 {
-	m_check_count = 200;
+	m_check_count = 600;
+	m_check_pass = 100;
 	m_useBackConv = true;
 	m_learningRate = 0.0001;
 	m_reader = 0;
@@ -101,7 +102,7 @@ void ImNetSmpl::doPass(int passes, int batch)
 //		printf("--> backward\r");
 		backward(Dlt);
 
-		if((pass % 40) == 0 && pass > 0){
+		if((pass % m_check_pass) == 0 && pass > 0 || m_check_pass == 30){
 			std::vector< ct::Matf > X;
 			ct::Matf y, y_, p;
 
@@ -125,7 +126,7 @@ void ImNetSmpl::doPass(int passes, int batch)
 			if(!idx)idx = 1;
 			printf("pass %d: loss=%f;\tpred=%f\n", pass, ls / idx, pr / idx);
 		}
-		if((pass % 40) == 0 && pass > 0){
+		if((pass % m_check_pass) == 0 && pass > 0){
 			save_net2(m_save_model);
 		}
 	}
