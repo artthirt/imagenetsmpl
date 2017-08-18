@@ -48,13 +48,13 @@ void ImNetSmpl::init()
 //		m_conv[i].setOptimizer(&m_mg[i]);
 //	}
 
-	m_conv[0].init(ct::Size(W, H), 3, 2, 32, ct::Size(3, 3), ct::LEAKYRELU, false, false);
-	m_conv[1].init(m_conv[0].szOut(), 32, 2, 64, ct::Size(3, 3), ct::LEAKYRELU, false);
-	m_conv[2].init(m_conv[1].szOut(), 64, 2, 128, ct::Size(3, 3), ct::LEAKYRELU, false);
-	m_conv[3].init(m_conv[2].szOut(), 128, 2, 128, ct::Size(3, 3), ct::LEAKYRELU, false);
-	m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, false);
-	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false);
-	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(3, 3), ct::LEAKYRELU, true);
+	m_conv[0].init(ct::Size(W, H), 3, 2, 32, ct::Size(3, 3), ct::RELU, false, false);
+	m_conv[1].init(m_conv[0].szOut(), 32, 2, 64, ct::Size(3, 3), ct::RELU, false);
+	m_conv[2].init(m_conv[1].szOut(), 64, 2, 128, ct::Size(3, 3), ct::RELU, false);
+	m_conv[3].init(m_conv[2].szOut(), 128, 2, 128, ct::Size(3, 3), ct::RELU, false);
+	m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), ct::RELU, false);
+	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), ct::RELU, false);
+	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(3, 3), ct::RELU, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
