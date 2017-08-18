@@ -48,8 +48,8 @@ void ImNetSmpl::init()
 //		m_conv[i].setOptimizer(&m_mg[i]);
 //	}
 
-	m_conv[0].init(ct::Size(W, H), 3, 2, 64, ct::Size(3, 3), ct::LEAKYRELU, false, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 2, 64, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[0].init(ct::Size(W, H), 3, 2, 32, ct::Size(3, 3), ct::LEAKYRELU, false, false);
+	m_conv[1].init(m_conv[0].szOut(), 32, 2, 64, ct::Size(3, 3), ct::LEAKYRELU, false);
 	m_conv[2].init(m_conv[1].szOut(), 64, 2, 128, ct::Size(3, 3), ct::LEAKYRELU, false);
 	m_conv[3].init(m_conv[2].szOut(), 128, 2, 128, ct::Size(3, 3), ct::LEAKYRELU, false);
 	m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, false);
@@ -62,9 +62,9 @@ void ImNetSmpl::init()
 
 	m_mlp.resize(mlp_size);
 
-	m_mlp[0].init(outFeatures, 4096, ct::LEAKYRELU);
+	m_mlp[0].init(outFeatures, 2048, ct::LEAKYRELU);
 //	m_mlp[1].init(4096, 2048);
-	m_mlp[1].init(4096, m_classes, ct::SOFTMAX);
+	m_mlp[1].init(2048, m_classes, ct::SOFTMAX);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
