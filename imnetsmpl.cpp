@@ -62,9 +62,9 @@ void ImNetSmpl::init()
 
 	m_mlp.resize(mlp_size);
 
-	m_mlp[0].init(outFeatures, 2048, ct::LEAKYRELU);
+	m_mlp[0].init(outFeatures, 4096, ct::RELU);
 //	m_mlp[1].init(4096, 2048);
-	m_mlp[1].init(2048, m_classes, ct::SOFTMAX);
+	m_mlp[1].init(4096, m_classes, ct::SOFTMAX);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
