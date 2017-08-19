@@ -36,9 +36,9 @@ void ImNetSmplGpu::init()
 	m_conv.resize(cnv_size);
 	m_mg.resize(m_conv.size());
 
-	for(size_t i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setOptimizer(&m_mg[i]);
-	}
+//	for(size_t i = 0; i < m_conv.size(); ++i){
+//		m_conv[i].setOptimizer(&m_mg[i]);
+//	}
 
 	m_conv[0].init(ct::Size(W, H), 3, 2, 32, ct::Size(3, 3), gpumat::RELU, false, false);
 	m_conv[1].init(m_conv[0].szOut(), 32, 2, 64, ct::Size(3, 3), gpumat::RELU, false);
