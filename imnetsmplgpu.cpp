@@ -94,16 +94,26 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 	std::vector< gpumat::GpuMat > gX;
 	gpumat::GpuMat gy, *gy_, gD;
 
+	m_reader->set_params_batch(batch, true, true);
+	m_reader->start();
+
 	for(int i = 0; i < pass; ++i){
 		std::cout << "pass " << i << "\r" << std::flush;
 
-		std::vector< ct::Matf > X;
-		ct::Matf y;
+		while(!m_reader->is_batch_exist()){
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+		Batch& btch = m_reader->front();
 
-		m_reader->get_batch(X, y, batch, true, true);
+		std::vector< ct::Matf >& X	= btch.X;
+		ct::Matf& y					= btch.y;
+
+//		m_reader->get_batch(X, y, batch, true, true);
 
 		get_gX(X, gX);
 		gpumat::convert_to_gpu(y, gy);
+
+		m_reader->pop_front();
 
 //		std::cout << "pass " << i << "\r";
 //		qDebug("--> pass %d", i);

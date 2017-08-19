@@ -5,6 +5,9 @@
 #include <vector>
 #include <QString>
 
+#include <thread>
+#include <list>
+
 struct Point{
 	Point(){
 		x = 0; y = 0;
@@ -19,6 +22,17 @@ struct Point{
 namespace cv{
 	class Mat;
 }
+
+struct Batch{
+	std::vector< ct::Matf > X;
+	ct::Matf y;
+
+	Batch(){}
+	Batch(std::vector< ct::Matf >& X, ct::Matf& y){
+		this->X = X;
+		this->y = y;
+	}
+};
 
 /**
  * @brief check
@@ -37,6 +51,7 @@ public:
 
 	ImReader(int seed = 11);
 	ImReader(const QString &pathToImages, int seed = 11);
+	~ImReader();
 
 	void init();
 
@@ -48,8 +63,23 @@ public:
 
 	void setImagePath(const QString& path);
 
+	Batch &front();
+	void pop_front();
+	bool is_batch_exist() const;
+	void set_params_batch(int batch, bool flip, bool aug);
+
+	void start();
+	void run();
+
 private:
 	std::mt19937 m_gt;
+
+	std::list<Batch> m_batches;
+	std::thread *m_thread;
+	int m_batch;
+	bool m_flip;
+	bool m_aug;
+	bool m_done;
 
 	std::vector< std::string > m_dirs;
 	std::vector< std::vector< std::string > > m_files;

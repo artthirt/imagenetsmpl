@@ -11,7 +11,7 @@
 #include "imnet_list.h"
 
 #include <random>
-
+#include <chrono>
 
 static std::mt19937 _rnd;
 
@@ -74,15 +74,35 @@ cv::Mat GetSquareImage( const cv::Mat& img, int target_width = 500 )
 
 ImReader::ImReader(int seed)
 {
+	m_batch = 10;
+	m_flip = true;
+	m_aug = true;
+	m_thread = 0;
+	m_done = false;
+
 	cv::setRNGSeed(seed);
 	_rnd.seed(seed);
 }
 
 ImReader::ImReader(const QString& pathToImages, int seed)
 {
+	m_batch = 10;
+	m_flip = true;
+	m_aug = true;
+	m_thread = 0;
+	m_done = false;
+
 	cv::setRNGSeed(seed);
 	m_image_path = pathToImages;
 	init();
+}
+
+ImReader::~ImReader()
+{
+	m_done = true;
+	if(m_thread){
+		delete m_thread;
+	}
 }
 
 void ImReader::init()
@@ -299,4 +319,52 @@ void ImReader::getMat(const ct::Matf &in, cv::Mat *out, const ct::Size sz)
 void ImReader::setImagePath(const QString &path)
 {
 	m_image_path = path;
+}
+
+Batch &ImReader::front()
+{
+	return m_batches.front();
+}
+
+void ImReader::pop_front()
+{
+	if(is_batch_exist())
+		m_batches.pop_front();
+}
+
+bool ImReader::is_batch_exist() const
+{
+	return !m_batches.empty();
+}
+
+void ImReader::set_params_batch(int batch, bool flip, bool aug)
+{
+	m_batch = batch;
+	m_flip = flip;
+	m_aug = aug;
+}
+
+void ImReader::start()
+{
+	if(m_thread)
+		return;
+
+	m_thread = new std::thread(&ImReader::run, this);
+}
+
+void ImReader::run()
+{
+#define MAX_BATCHES		5
+
+	while(!m_done){
+		std::vector<ct::Matf> X;
+		ct::Matf y;
+
+		if(m_batches.size() < MAX_BATCHES){
+			get_batch(X, y, m_batch, m_flip, m_aug);
+			m_batches.push_back(Batch(X, y));
+		}else{
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+	}
 }
