@@ -34,9 +34,9 @@ win32{
     QMAKE_CXXFLAGS += /openmp
 
     CONFIG(debug, debug|release){
-        libs = -lopencv_core330d -lopencv_highgui330d -lopencv_imgproc330d -lopencv_imgcodecs330d
+        libs = -lopencv_core310d -lopencv_highgui310d -lopencv_imgproc310d -lopencv_imgcodecs310d
     }else{
-        libs = -lopencv_core330 -lopencv_highgui330 -lopencv_imgproc330 -lopencv_imgcodecs330
+        libs = -lopencv_core310 -lopencv_highgui310 -lopencv_imgproc310 -lopencv_imgcodecs310
     }
 
     INCLUDEPATH += $(OPENCV3_DIR)/include

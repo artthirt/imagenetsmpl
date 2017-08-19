@@ -245,17 +245,18 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const
 
 	res.setSize(1, m.cols * m.rows * m.channels());
 
-	int idx = 0;
 	float* dX1 = res.ptr() + 0 * m.rows * m.cols;
 	float* dX2 = res.ptr() + 1 * m.rows * m.cols;
 	float* dX3 = res.ptr() + 2 * m.rows * m.cols;
 
+#pragma omp parallel for
 	for(int y = 0; y < m.rows; ++y){
 		float *v = m.ptr<float>(y);
-		for(int x = 0; x < m.cols; ++x, ++idx){
-			dX1[idx] = v[x * m.channels() + 0];
-			dX2[idx] = v[x * m.channels() + 1];
-			dX3[idx] = v[x * m.channels() + 2];
+		for(int x = 0; x < m.cols; ++x){
+			int off = y * m.cols + x;
+			dX1[off] = v[x * m.channels() + 0];
+			dX2[off] = v[x * m.channels() + 1];
+			dX3[off] = v[x * m.channels() + 2];
 		}
 	}
 
