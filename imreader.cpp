@@ -260,7 +260,7 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const
 		std::normal_distribution<float> nd(0, 0.1);
 		float br = nd(m_gt);
 		float cntr = nd(m_gt);
-		m.convertTo(m, CV_32F, (0.95 + br)/255., cntr);
+		m.convertTo(m, CV_32F, (0.95 + br)/255., 0);
 	}
 
 	res.setSize(1, m.cols * m.rows * m.channels());
@@ -323,13 +323,19 @@ void ImReader::setImagePath(const QString &path)
 
 Batch &ImReader::front()
 {
-	return m_batches.front();
+	m_mutex.lock();
+	Batch& bt = m_batches.front();
+	m_mutex.unlock();
+	return bt;
 }
 
 void ImReader::pop_front()
 {
-	if(is_batch_exist())
+	if(is_batch_exist()){
+		m_mutex.lock();
 		m_batches.pop_front();
+		m_mutex.unlock();
+	}
 }
 
 bool ImReader::is_batch_exist() const
@@ -357,12 +363,14 @@ void ImReader::run()
 #define MAX_BATCHES		5
 
 	while(!m_done){
-		std::vector<ct::Matf> X;
-		ct::Matf y;
+//		std::vector<ct::Matf> X;
+//		ct::Matf y;
 
 		if(m_batches.size() < MAX_BATCHES){
-			get_batch(X, y, m_batch, m_flip, m_aug);
-			m_batches.push_back(Batch(X, y));
+			m_mutex.lock();
+			m_batches.push_back(Batch());
+			get_batch(m_batches.back().X, m_batches.back().y, m_batch, m_flip, m_aug);
+			m_mutex.unlock();
 		}else{
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}

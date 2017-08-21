@@ -7,6 +7,7 @@
 
 #include <thread>
 #include <list>
+#include <mutex>
 
 struct Point{
 	Point(){
@@ -80,6 +81,7 @@ private:
 	bool m_flip;
 	bool m_aug;
 	bool m_done;
+	std::mutex m_mutex;
 
 	std::vector< std::string > m_dirs;
 	std::vector< std::vector< std::string > > m_files;
