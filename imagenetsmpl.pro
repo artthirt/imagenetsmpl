@@ -31,16 +31,23 @@ CONFIG(debug, debug|release){
 
 win32{
 
-    QMAKE_CXXFLAGS += /openmp
-
-    CONFIG(debug, debug|release){
-        libs = -lopencv_core310d -lopencv_highgui310d -lopencv_imgproc310d -lopencv_imgcodecs310d
-    }else{
-        libs = -lopencv_core310 -lopencv_highgui310 -lopencv_imgproc310 -lopencv_imgcodecs310
+    isEmpty(OPENCV_VER){
+        OPENCV_VER = 310
     }
 
-    INCLUDEPATH += $(OPENCV3_DIR)/include
-    LIBS += -L$(OPENCV3_DIR)/x64/vc14/lib $$libs
+    QMAKE_CXXFLAGS += /openmp
+
+    VER = $$OPENCV_VER
+
+    CONFIG(debug, debug|release){
+        VER += "d"
+        LIBS = -lopencv_core$$VER -lopencv_highgui$$VER -lopencv_imgproc$$VER -lopencv_imgcodecs$$VER
+    }else{
+        LIBS = -lopencv_core$$VER -lopencv_highgui$$VER -lopencv_imgproc$$VER -lopencv_imgcodecs$$VER
+    }
+
+    INCLUDEPATH += $$OPENCV3_DIR/include
+    LIBS += -L$$OPENCV3_DIR/x64/vc14/lib $$libs
 }else{
     QMAKE_CXXFLAGS += -fopenmp
     LIBS += -l:libopencv_core.so.3.2 -l:libopencv_highgui.so.3.2 -l:libopencv_imgproc.so.3.2 -l:libopencv_imgcodecs.so.3.2 -ltbb -lgomp
