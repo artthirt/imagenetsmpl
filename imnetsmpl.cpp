@@ -50,7 +50,7 @@ void ImNetSmpl::init()
 
 	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), ct::LEAKYRELU, true, false);
 	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(5, 5), ct::LEAKYRELU, true);
-	m_conv[2].init(m_conv[1].szOut(), 128, 1, 128, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, false);
 	m_conv[3].init(m_conv[2].szOut(), 256, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, false);
 	m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false);
 	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false);
@@ -88,19 +88,28 @@ void ImNetSmpl::doPass(int passes, int batch)
 	if(!m_init)
 		init();
 
+	m_reader->set_params_batch(batch, true, true);
+	m_reader->start();
+
 	for(int pass = 0; pass < passes; ++pass){
 		std::cout << "pass " << pass << "\r" << std::flush;
 
-		std::vector< ct::Matf > X;
-		ct::Matf y, y_;
+		ct::Matf y_;
 
-		m_reader->get_batch(X, y, batch, true, true);
+		while(!m_reader->is_batch_exist()){
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+		Batch& btch = m_reader->front();
+
+		std::vector< ct::Matf >& X	= btch.X;
+		ct::Matf& y					= btch.y;
 
 //		qDebug("--> pass %d", i);
 		forward(X, y_, true);
 
 		ct::Matf Dlt = ct::subIndOne(y_, y);
 
+		m_reader->pop_front();
 //		ct::save_mat(Dlt, "dlt.txt");
 
 //		printf("--> backward\r");
