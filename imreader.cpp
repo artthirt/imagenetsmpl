@@ -247,9 +247,9 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const
 		cv::flip(m, m, 1);
 	}
 
-	if(aug && off.x != 0 && off.y != 0){
-		offsetImage(m, cv::Scalar(0), off.x, off.y);
-	}
+//	if(aug && off.x != 0 && off.y != 0){
+//		offsetImage(m, cv::Scalar(0), off.x, off.y);
+//	}
 
 
 //	cv::imwrite("ss.bmp", m);

@@ -48,13 +48,13 @@ void ImNetSmpl::init()
 //		m_conv[i].setOptimizer(&m_mg[i]);
 //	}
 
-	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), ct::RELU, true, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(5, 5), ct::RELU, true);
-	m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3), ct::RELU, false);
-	m_conv[3].init(m_conv[2].szOut(), 256, 1, 512, ct::Size(3, 3), ct::RELU, false);
-	m_conv[4].init(m_conv[3].szOut(), 512, 1, 512, ct::Size(3, 3), ct::RELU, false);
-	m_conv[5].init(m_conv[4].szOut(), 512, 1, 1024, ct::Size(3, 3), ct::RELU, false);
-	m_conv[6].init(m_conv[5].szOut(), 1024, 1, 1024, ct::Size(3, 3), ct::RELU, true);
+	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), ct::LEAKYRELU, true, false);
+	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(5, 5), ct::LEAKYRELU, true);
+	m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[3].init(m_conv[2].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[4].init(m_conv[3].szOut(), 512, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[5].init(m_conv[4].szOut(), 512, 1, 1024, ct::Size(3, 3), ct::LEAKYRELU, false);
+	m_conv[6].init(m_conv[5].szOut(), 1024, 1, 1024, ct::Size(3, 3), ct::LEAKYRELU, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -62,7 +62,7 @@ void ImNetSmpl::init()
 
 	m_mlp.resize(mlp_size);
 
-	m_mlp[0].init(outFeatures, 4096, ct::RELU);
+	m_mlp[0].init(outFeatures, 4096, ct::LEAKYRELU);
 //	m_mlp[1].init(4096, 2048);
 	m_mlp[1].init(4096, m_classes, ct::SOFTMAX);
 
