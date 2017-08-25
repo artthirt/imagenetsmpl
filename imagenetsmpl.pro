@@ -40,7 +40,7 @@ win32{
     VER = $$OPENCV_VER
 
     CONFIG(debug, debug|release){
-        VER += "d"
+        VER = $$OPENCV_VER"d"
         LIBS = -lopencv_core$$VER -lopencv_highgui$$VER -lopencv_imgproc$$VER -lopencv_imgcodecs$$VER
     }else{
         LIBS = -lopencv_core$$VER -lopencv_highgui$$VER -lopencv_imgproc$$VER -lopencv_imgcodecs$$VER

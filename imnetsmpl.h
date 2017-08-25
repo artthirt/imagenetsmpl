@@ -65,7 +65,6 @@ private:
 
 	std::vector< conv2::convnn2_mixed > m_conv;
 	std::vector< ct::mlp_mixed > m_mlp;
-	std::vector< ct::MomentOptimizer<float> > m_mg;
 	int m_classes;
 	ct::Matf m_A1;
 //	ct::Matf m_A2;
@@ -74,7 +73,9 @@ private:
 //	ct::Matf D2;
 	std::vector< ct::Matf > deltas1;
 //	std::vector< ct::Matf > deltas2;
-	ct::MlpOptimMixed m_optim;
+	ct::MlpMomentumOptimizerMixed m_optim;
+	conv2::CnvMomentumOptimizerMixed m_cnv_optim;
+
 	QString m_model;
 	QString m_save_model;
 	int m_check_pass;

@@ -42,11 +42,6 @@ void ImNetSmpl::init()
 	int W = ImReader::IM_WIDTH, H = ImReader::IM_HEIGHT;
 
 	m_conv.resize(cnv_size);
-	m_mg.resize(cnv_size);
-
-//	for(size_t i = 0; i < m_conv.size(); ++i){
-//		m_conv[i].setOptimizer(&m_mg[i]);
-//	}
 
 	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), ct::LEAKYRELU, true, false);
 	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(5, 5), ct::LEAKYRELU, true);
@@ -69,9 +64,8 @@ void ImNetSmpl::init()
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
 
-	for(int i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setAlpha(m_learningRate);
-	}
+	m_cnv_optim.init(m_conv);
+	m_cnv_optim.setAlpha(m_learningRate);
 
 	for(int i = 0; i < m_mlp.size(); ++i){
 		m_mlp[i].setDropout(0.93f);
@@ -197,6 +191,7 @@ void ImNetSmpl::backward(const ct::Matf &Delta)
 	}
 
 	m_optim.pass(m_mlp);
+	m_cnv_optim.pass(m_conv);
 }
 
 ct::Matf ImNetSmpl::predict(ct::Matf &y)
@@ -442,7 +437,7 @@ void ImNetSmpl::load_net2(const QString &name)
 	for(size_t i = 0; i < m_conv.size(); ++i){
 		conv2::convnn2_mixed &cnv = m_conv[i];
 		cnv.read2(fs);
-		printf("layer %d: rows %d, cols %d\n", i, cnv.W[0].rows, cnv.W[0].cols);
+		printf("layer %d: rows %d, cols %d\n", i, cnv.W.rows, cnv.W.cols);
 	}
 
 	printf("mlp\n");

@@ -28,10 +28,7 @@ void ImNetSmplGpu::setLearningRate(double lr)
 {
 	m_learningRate = lr;
 	m_optim.setAlpha(m_learningRate);
-
-	for(int i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setAlpha(m_learningRate);
-	}
+	m_cnv_optim.setAlpha(m_learningRate);
 }
 
 void ImNetSmplGpu::init()
@@ -39,11 +36,6 @@ void ImNetSmplGpu::init()
 	int W = ImReader::IM_WIDTH, H = ImReader::IM_HEIGHT;
 
 	m_conv.resize(cnv_size);
-	m_mg.resize(m_conv.size());
-
-	for(size_t i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setOptimizer(&m_mg[i]);
-	}
 
 	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), gpumat::LEAKYRELU, false, false);
 	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, true);
@@ -66,8 +58,10 @@ void ImNetSmplGpu::init()
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
 
+	m_cnv_optim.init(m_conv);
+	m_cnv_optim.setAlpha(m_learningRate);
+
 	for(int i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setAlpha(m_learningRate);
 		m_conv[i].setDropout(0.93);
 	}
 
@@ -228,6 +222,7 @@ void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 		}
 	}
 
+	m_cnv_optim.pass(m_conv);
 	m_optim.pass(m_mlp);
 }
 
@@ -504,7 +499,7 @@ void ImNetSmplGpu::load_net2(const QString &name)
 	for(size_t i = 0; i < m_conv.size(); ++i){
 		gpumat::convnn_gpu &cnv = m_conv[i];
 		cnv.read2(fs);
-		printf("layer %d: rows %d, cols %d\n", i, cnv.W[0].rows, cnv.W[0].cols);
+		printf("layer %d: rows %d, cols %d\n", i, cnv.W.rows, cnv.W.cols);
 	}
 
 	printf("mlp\n");

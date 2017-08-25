@@ -74,8 +74,7 @@ private:
 	int m_classes;
 	gpumat::GpuMat m_A1;
 	gpumat::MlpOptimMoment m_optim;
-	std::vector< gpumat::StohasticGradientOptimizer > m_sg;
-	std::vector< gpumat::MomentumOptimizer > m_mg;
+	gpumat::CnvMomentumOptimizer m_cnv_optim;
 	std::vector< gpumat::GpuMat > m_deltas;
 
 	int m_check_count;
