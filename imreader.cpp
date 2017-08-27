@@ -259,7 +259,7 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const
 	}else{
 		std::normal_distribution<float> nd(0, 0.1);
 		float br = nd(m_gt);
-		float cntr = nd(m_gt);
+		float cntr = 0.3 * nd(m_gt);
 		m.convertTo(m, CV_32F, (0.95 + br)/255., 0);
 	}
 

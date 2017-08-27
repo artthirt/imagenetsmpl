@@ -66,7 +66,7 @@ void ImNetSmplGpu::init()
 	}
 
 	for(int i = 0; i < m_mlp.size(); ++i){
-		m_mlp[i].setDropout(0.97);
+		m_mlp[i].setDropout(0.94);
 	}
 
 
@@ -164,7 +164,7 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 //		m_conv[i].setDropout(dropout);
 //	}
 
-	for(int i = 0; i < m_mlp.size(); ++i){
+	for(int i = 0; i < m_mlp.size() - 1; ++i){
 		m_mlp[i].setDropout(dropout);
 	}
 
