@@ -13,7 +13,7 @@ ImNetSmplGpu::ImNetSmplGpu()
 	m_learningRate = 0.001;
 	m_useBackConv = true;
 	m_init = false;
-	m_check_count = 600;
+	m_check_count = 400;
 	m_classes = 1000;
 	m_model = "model.bin";
 	m_save_model = "model.bin_ext";
