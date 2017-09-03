@@ -63,6 +63,8 @@ public:
 
 	void setUseBackConv(bool val);
 
+	void set_train(bool val);
+
 private:
 	ImReader *m_reader;
 	double m_learningRate;

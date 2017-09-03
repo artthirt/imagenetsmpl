@@ -37,13 +37,13 @@ void ImNetSmplGpu::init()
 
 	m_conv.resize(cnv_size);
 
-	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), gpumat::LEAKYRELU, false, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, true);
-	m_conv[2].init(m_conv[1].szOut(), 128, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false);
-	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, true);
-	m_conv[4].init(m_conv[3].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false);
-	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true);
-	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false);
+	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), gpumat::LEAKYRELU, false, true, false);
+	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
+	m_conv[2].init(m_conv[1].szOut(), 128, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
+	m_conv[4].init(m_conv[3].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
+	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -163,6 +163,7 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 //	for(int i = 0; i < m_conv.size(); ++i){
 //		m_conv[i].setDropout(dropout);
 //	}
+	set_train(dropout);
 
 	for(int i = 0; i < m_mlp.size() - 1; ++i){
 		m_mlp[i].setDropout(dropout);
@@ -524,4 +525,11 @@ void ImNetSmplGpu::setModelName(const QString &name)
 void ImNetSmplGpu::setUseBackConv(bool val)
 {
 	m_useBackConv = val;
+}
+
+void ImNetSmplGpu::set_train(bool val)
+{
+	for(gpumat::convnn_gpu& item: m_conv){
+		item.setTrainMode(val);
+	}
 }
