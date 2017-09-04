@@ -6,7 +6,7 @@
 #include <QFile>
 
 const int cnv_size = 7;
-const int mlp_size = 2;
+const int mlp_size = 3;
 
 ImNetSmplGpu::ImNetSmplGpu()
 {
@@ -52,8 +52,8 @@ void ImNetSmplGpu::init()
 	m_mlp.resize(mlp_size);
 
 	m_mlp[0].init(outFeatures, 4096, gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
-//	m_mlp[1].init(4096, 2048, gpumat::GPU_FLOAT);
-	m_mlp[1].init(4096, m_classes, gpumat::GPU_FLOAT, gpumat::SOFTMAX);
+	m_mlp[1].init(4096, 2048, gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
+	m_mlp[2].init(2048, m_classes, gpumat::GPU_FLOAT, gpumat::SOFTMAX);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
@@ -457,24 +457,24 @@ void ImNetSmplGpu::save_net2(const QString &name)
 		m_mlp[i].write2(fs);
 	}
 
-	int use_bn = 0, layers = 0;
-	for(gpumat::convnn_gpu& item: m_conv){
-		if(item.use_bn()){
-			use_bn = 1;
-			layers++;
-		}
-	}
+//	int use_bn = 0, layers = 0;
+//	for(gpumat::convnn_gpu& item: m_conv){
+//		if(item.use_bn()){
+//			use_bn = 1;
+//			layers++;
+//		}
+//	}
 
-	fs.write((char*)&use_bn, sizeof(use_bn));
-	fs.write((char*)&layers, sizeof(layers));
-	if(use_bn > 0){
-		for(size_t i = 0; i < m_conv.size(); ++i){
-			if(m_conv[i].use_bn()){
-				fs.write((char*)&i, sizeof(i));
-				m_conv[i].bn.write(fs);
-			}
-		}
-	}
+//	fs.write((char*)&use_bn, sizeof(use_bn));
+//	fs.write((char*)&layers, sizeof(layers));
+//	if(use_bn > 0){
+//		for(size_t i = 0; i < m_conv.size(); ++i){
+//			if(m_conv[i].use_bn()){
+//				fs.write((char*)&i, sizeof(i));
+//				m_conv[i].bn.write(fs);
+//			}
+//		}
+//	}
 
 	printf("model saved.\n");
 
@@ -529,19 +529,19 @@ void ImNetSmplGpu::load_net2(const QString &name)
 		printf("layer %d: rows %d, cols %d\n", i, mlp.W.rows, mlp.W.cols);
 	}
 
-	int use_bn = 0, layers = 0;
-	fs.read((char*)&use_bn, sizeof(use_bn));
-	fs.read((char*)&layers, sizeof(layers));
-	if(use_bn > 0){
-		for(int i = 0; i < layers; ++i){
-			size_t layer;
-			fs.read((char*)&layer, sizeof(layer));
-			if(layer >= 0){
-				m_conv[layer].bn.read(fs);
+//	int use_bn = 0, layers = 0;
+//	fs.read((char*)&use_bn, sizeof(use_bn));
+//	fs.read((char*)&layers, sizeof(layers));
+//	if(use_bn > 0){
+//		for(int i = 0; i < layers; ++i){
+//			size_t layer;
+//			fs.read((char*)&layer, sizeof(layer));
+//			if(layer >= 0){
+//				m_conv[layer].bn.read(fs);
 
-			}
-		}
-	}
+//			}
+//		}
+//	}
 
 	printf("model loaded.\n");
 
