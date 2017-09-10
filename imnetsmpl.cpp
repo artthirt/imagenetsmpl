@@ -67,7 +67,7 @@ void ImNetSmpl::init()
 	m_cnv_optim.init(m_conv);
 	m_cnv_optim.setAlpha(m_learningRate);
 
-	for(int i = 0; i < m_mlp.size(); ++i){
+	for(int i = 0; i < (int)m_mlp.size(); ++i){
 		m_mlp[i].setDropout(0.93f);
 	}
 
@@ -109,7 +109,7 @@ void ImNetSmpl::doPass(int passes, int batch)
 //		printf("--> backward\r");
 		backward(Dlt);
 
-		if((pass % m_check_pass) == 0 && pass > 0 || pass == 30){
+		if(((pass % m_check_pass) == 0 && pass > 0) || pass == 30){
 			std::vector< ct::Matf > X;
 			ct::Matf y, y_, p;
 
@@ -141,7 +141,7 @@ void ImNetSmpl::doPass(int passes, int batch)
 
 void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut, bool dropout)
 {
-	for(int i = 0; i < m_mlp.size(); ++i){
+	for(uint i = 0; i < m_mlp.size(); ++i){
 		m_mlp[i].setDropout(dropout);
 	}
 
@@ -251,7 +251,7 @@ void ImNetSmpl::predicts(const QString &sdir)
 		system_clock::now().time_since_epoch()
 	);
 
-	for(int i= 0; i < dir.count(); ++i){
+	for(uint i= 0; i < dir.count(); ++i){
 		QString s = dir.path() + "/" + dir[i];
 		QFileInfo f(s);
 		if(f.isFile()){

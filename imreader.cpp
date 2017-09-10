@@ -117,7 +117,7 @@ void ImReader::init()
 	m_all_count = 0;
 
 	int numb = 0;
-	for(int i = 0; i < dir.count(); ++i){
+	for(uint i = 0; i < dir.count(); ++i){
 		QFileInfo fi(dir.path() + "/" + dir[i]);
 		if(!fi.isDir() || dir[i] == "." || dir[i] == "..")
 			continue;
@@ -125,7 +125,7 @@ void ImReader::init()
 		QDir inDir(dir.path() + "/" + dir[i]);
 
 		std::vector< std::string > files;
-		for(int j = 0; j < inDir.count(); ++j){
+		for(uint j = 0; j < inDir.count(); ++j){
 			files.push_back(QString(dir[i] + "/" + inDir[j]).toStdString());
 		}
 		m_all_count += files.size();
@@ -156,7 +156,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 	bflip.resize(batch);
 
 	if(flip){
-		for(int i = 0; i < bflip.size(); ++i){
+		for(uint i = 0; i < bflip.size(); ++i){
 			bflip[i] = bn(_rnd);
 		}
 	}else{
@@ -164,7 +164,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 	}
 
 //#pragma omp parallel for
-	for(int i = 0; i < shuffle.size(); ++i){
+	for(uint i = 0; i < shuffle.size(); ++i){
 		int id1 = shuffle[i];
 
 		int len = m_files[id1].size();
