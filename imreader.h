@@ -68,6 +68,7 @@ public:
 	void pop_front();
 	bool is_batch_exist() const;
 	void set_params_batch(int batch, bool flip, bool aug);
+	int batches() const;
 
 	void start();
 	void run();

@@ -144,13 +144,14 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 	X.resize(batch);
 	y = ct::Matf::zeros(batch, 1);
 
-	std::vector< int > shuffle;
-	shuffle.resize(batch);
-	cv::randu(shuffle, 0, m_files.size());
+//	std::vector< int > shuffle;
+//	shuffle.resize(batch);
+//	cv::randu(shuffle, 0, m_files.size());
 
 //	std::stringstream ss, ss2;
 
 	std::binomial_distribution<int> bn(1, 0.5);
+	std::uniform_int_distribution<int> ui(0, m_files.size() - 1);
 
 	std::vector < bool > bflip;
 	bflip.resize(batch);
@@ -164,8 +165,8 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 	}
 
 //#pragma omp parallel for
-	for(uint i = 0; i < shuffle.size(); ++i){
-		int id1 = shuffle[i];
+	for(uint i = 0; i < batch; ++i){
+		int id1 = ui(_rnd);//shuffle[i];
 
 		int len = m_files[id1].size();
 
@@ -349,6 +350,11 @@ void ImReader::set_params_batch(int batch, bool flip, bool aug)
 	m_aug = aug;
 }
 
+int ImReader::batches() const
+{
+	return m_batches.size();
+}
+
 void ImReader::start()
 {
 	if(m_thread)
@@ -359,16 +365,16 @@ void ImReader::start()
 
 void ImReader::run()
 {
-#define MAX_BATCHES		5
+#define MAX_BATCHES		20
 
 	while(!m_done){
-//		std::vector<ct::Matf> X;
-//		ct::Matf y;
+		std::vector<ct::Matf> X;
+		ct::Matf y;
 
 		if(m_batches.size() < MAX_BATCHES){
+			get_batch(X, y, m_batch, m_flip, m_aug);
 			m_mutex.lock();
-			m_batches.push_back(Batch());
-			get_batch(m_batches.back().X, m_batches.back().y, m_batch, m_flip, m_aug);
+			m_batches.push_back(Batch(X, y));
 			m_mutex.unlock();
 		}else{
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));

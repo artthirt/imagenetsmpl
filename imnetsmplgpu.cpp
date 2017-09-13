@@ -6,7 +6,7 @@
 #include <QFile>
 
 const int cnv_size = 6;
-const int mlp_size = 2;
+const int mlp_size = 3;
 
 ImNetSmplGpu::ImNetSmplGpu()
 {
@@ -51,9 +51,9 @@ void ImNetSmplGpu::init()
 
 	m_mlp.resize(mlp_size);
 
-	m_mlp[0].init(outFeatures,	2048,		gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
-//	m_mlp[1].init(4096,			2048,		gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
-	m_mlp[1].init(2048,			m_classes,	gpumat::GPU_FLOAT, gpumat::SOFTMAX);
+	m_mlp[0].init(outFeatures,	4096,		gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
+	m_mlp[1].init(4096,			4096,		gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
+	m_mlp[2].init(4096,			m_classes,	gpumat::GPU_FLOAT, gpumat::SOFTMAX);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
@@ -100,7 +100,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 	m_reader->start();
 
 	for(int i = 0; i < pass; ++i){
-		std::cout << "pass " << i << "\r" << std::flush;
+		std::cout << "pass " << i << "; batches in mem: " << m_reader->batches() << "     \r" << std::flush;
 
 		while(!m_reader->is_batch_exist()){
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -148,11 +148,11 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 				p = predict(*gy_);
 				pr += check(y, p);
 
-				printf("test: cur %d, all %d    \r", i, m_check_count);
+				printf("test: cur %d, all %d            \r", i, m_check_count);
 				std::cout << std::flush;
 			}
 			if(!idx)idx = 1;
-			printf("pass %d: loss=%f;\tpred=%f\n", i, ls / idx, pr / idx);
+			printf("pass %d: loss=%f;\tpred=%f           \n", i, ls / idx, pr / idx);
 		}
 		if((i % 200) == 0 && i > 0){
 //			save_net(m_model);
@@ -224,9 +224,9 @@ void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 	//	//	printf("-cnv0        \r\n");
 	//		m_conv[0].backward(m_conv[1].Dlt, true);
 		}
+		m_cnv_optim.pass(m_conv);
 	}
 
-	m_cnv_optim.pass(m_conv);
 	m_optim.pass(m_mlp);
 }
 
@@ -515,9 +515,12 @@ void ImNetSmplGpu::load_net2(const QString &name)
 
 	printf("Load model: conv size %d, mlp size %d\n", cnvs, mlps);
 
-	m_conv.resize(cnvs);
-	m_mlp.resize(mlps);
+#define USE_MLP 1
 
+	m_conv.resize(cnvs);
+#if USE_MLP
+	m_mlp.resize(mlps);
+#endif
 	printf("conv\n");
 	for(size_t i = 0; i < m_conv.size(); ++i){
 		gpumat::convnn_gpu &cnv = m_conv[i];
@@ -526,10 +529,17 @@ void ImNetSmplGpu::load_net2(const QString &name)
 	}
 
 	printf("mlp\n");
-	for(size_t i = 0; i < m_mlp.size(); ++i){
+	for(size_t i = 0; i < mlps; ++i){
+#if USE_MLP
 		gpumat::mlp &mlp = m_mlp[i];
 		mlp.read2(fs);
 		printf("layer %d: rows %d, cols %d\n", i, mlp.W.rows, mlp.W.cols);
+#else
+		gpumat::GpuMat W, B;
+		gpumat::read_fs2(fs, W);
+		gpumat::read_fs2(fs, B);
+		printf("layer %d: rows %d, cols %d\n", i, W.rows, W.cols);
+#endif
 	}
 
 	int use_bn = 0, layers = 0;
