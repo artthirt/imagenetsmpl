@@ -127,6 +127,8 @@ void test2()
 
 	std::cout << D.print() << std::endl;
 
+	/////////////
+
 	gpumat::GpuMat g_A, g_B, g_C;
 	gpumat::convert_to_gpu(A, g_A);
 	gpumat::convert_to_gpu(B, g_B);
@@ -137,6 +139,10 @@ void test2()
 	g_C.cols = szOut.width;
 
 	std::cout << g_C.print() << std::endl;
+
+	///////////////////
+
+
 }
 
 void test3()
