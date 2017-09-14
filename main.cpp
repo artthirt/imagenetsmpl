@@ -93,7 +93,10 @@ void test()
 
 void test2()
 {
-	ct::Matf A(5, 10), B = ct::Matf::ones(3, 3), C, D;
+	int c_rows = 35;
+	int c_cols = 10;
+
+	ct::Matf A(c_rows, c_cols), B = ct::Matf::ones(3, 3), C, D;
 
 	for(int i = 0, k = 1; i < A.rows; ++i){
 		float *dA = A.ptr(i);
@@ -107,7 +110,7 @@ void test2()
 
 	ct::Size szOut;
 
-	conv2::conv2(A, ct::Size(10, 5), 1, 1, B, ct::Size(3, 3), C, szOut, conv2::SAME);
+	conv2::conv2(A, ct::Size(c_cols, c_rows), 1, 2, B, ct::Size(3, 3), C, szOut, conv2::SAME);
 
 	int rows = C.rows;
 	int cols = C.cols;
@@ -120,28 +123,35 @@ void test2()
 	C.rows = rows;
 	C.cols = cols;
 
-	conv2::conv2_transpose(C, ct::Size(10, 5), 1, 1, B, ct::Size(3, 3), szOut, D, conv2::SAME);
+	conv2::conv2_transpose(C, ct::Size(c_cols, c_rows), 1, 2, B, ct::Size(3, 3), szOut, D, conv2::SAME);
 
-	D.rows = szOut.height;
-	D.cols = szOut.width;
+	D.rows = c_rows;
+	D.cols = c_cols;
 
 	std::cout << D.print() << std::endl;
 
 	/////////////
 
-	gpumat::GpuMat g_A, g_B, g_C;
+	gpumat::GpuMat g_A, g_B, g_C, g_D;
 	gpumat::convert_to_gpu(A, g_A);
 	gpumat::convert_to_gpu(B, g_B);
 
-	gpumat::conv2(g_A, ct::Size(10, 5), 1, 1, g_B, ct::Size(3, 3), g_C, szOut, gpumat::SAME);
+	gpumat::conv2(g_A, ct::Size(c_cols, c_rows), 1, 2, g_B, ct::Size(3, 3), g_C, szOut, gpumat::SAME);
 
 	g_C.rows = szOut.height;
 	g_C.cols = szOut.width;
 
 	std::cout << g_C.print() << std::endl;
 
-	///////////////////
+	g_C.rows = rows;
+	g_C.cols = cols;
 
+	gpumat::conv2_transpose(g_C, ct::Size(c_cols, c_rows), 1, 2, g_B, ct::Size(3, 3), szOut, g_D, gpumat::SAME);
+
+	g_D.rows = c_rows;
+	g_D.cols = c_cols;
+
+	std::cout << g_D.print() << std::endl;
 
 }
 
