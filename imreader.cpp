@@ -93,6 +93,7 @@ ImReader::ImReader(const QString& pathToImages, int seed)
 	m_done = false;
 
 	cv::setRNGSeed(seed);
+	_rnd.seed(seed);
 	m_image_path = pathToImages;
 	init();
 }
@@ -365,7 +366,7 @@ void ImReader::start()
 
 void ImReader::run()
 {
-#define MAX_BATCHES		20
+#define MAX_BATCHES		8
 
 	while(!m_done){
 		std::vector<ct::Matf> X;
