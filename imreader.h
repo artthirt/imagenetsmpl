@@ -58,7 +58,8 @@ public:
 
 	void get_batch(std::vector< ct::Matf >& X, ct::Matf& y, int batch, bool flip = false, bool aug = false);
 
-	ct::Matf get_image(const std::string& name, bool flip = false, bool aug = false, const Point& off = Point());
+	ct::Matf get_image(const std::string& name, bool flip = false, bool aug = false, bool gray = false,
+					   ct::Vec3f &lvls = ct::Vec3f(1, 1, 1), const Point& off = Point());
 
 	void getMat(const ct::Matf &in, cv::Mat *out, const ct::Size sz);
 

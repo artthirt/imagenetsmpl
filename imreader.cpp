@@ -153,6 +153,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 	std::binomial_distribution<int> bn(1, 0.5);
 	std::uniform_int_distribution<int> ui(0, m_files.size() - 1);
+	std::normal_distribution<float> nl(1, 0.1);
 
 	std::vector < bool > bflip;
 	bflip.resize(batch);
@@ -174,28 +175,6 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 		std::uniform_int_distribution<int> un(0, len - 1);
 		int id2 = un(_rnd);
 
-//		printf("un: %d, ", id1);
-//		int id1 = 0;
-//		int id2 = 0;
-
-//		int cnt = 0;
-//		for(int j = 0; j < m_files.size(); ++j){
-//			if(cnt + m_files[j].size() > id){
-//				id1 = j;
-//				id2 = id - cnt;
-//				break;
-//			}
-//			cnt += m_files[j].size();
-//		}
-
-//		ss << id1 << ", ";
-//		ss2 << id2 << ", ";
-
-//		bool fl = false;
-//		if(flip){
-//			fl = bn(_rnd);
-//		}
-
 		int xoff = 0, yoff = 0;
 
 		if(aug){
@@ -204,7 +183,16 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 			yoff = nd(m_gt);
 		}
 
-		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], bflip[i], aug, Point(xoff, yoff));
+		bool is_gray = false;
+		ct::Vec3f lvls = ct::Vec3f(1, 1, 1);
+		if(aug){
+			is_gray = bn(_rnd);
+			lvls[0] = nl(_rnd);
+			lvls[1] = nl(_rnd);
+			lvls[2] = nl(_rnd);
+		}
+
+		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], bflip[i], aug, is_gray, lvls, Point(xoff, yoff));
 		if(!Xi.empty()){
 			X[i] = Xi;
 			std::string n = m_dirs[id1];
@@ -235,7 +223,8 @@ void offsetImage(cv::Mat &image, cv::Scalar bordercolour, int xoffset, int yoffs
 }
 
 
-ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const Point &off)
+ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, bool gray,
+							 ct::Vec3f& lvls, const Point &off)
 {
 	ct::Matf res;
 
@@ -252,7 +241,10 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const
 //	if(aug && off.x != 0 && off.y != 0){
 //		offsetImage(m, cv::Scalar(0), off.x, off.y);
 //	}
-
+	if(gray){
+		cv::cvtColor(m, m, cv::COLOR_BGR2GRAY);
+		cv::cvtColor(m, m, cv::COLOR_GRAY2BGR);
+	}
 
 //	cv::imwrite("ss.bmp", m);
 
@@ -279,17 +271,17 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const
 		float* dX3 = res.ptr(2);
 		for(int x = 0; x < m.cols; ++x){
 			int off = y * m.cols + x;
-			dX1[off] = v[x * m.channels() + 0];
-			dX2[off] = v[x * m.channels() + 1];
-			dX3[off] = v[x * m.channels() + 2];
+			dX1[off] = lvls[0] * v[x * m.channels() + 0];
+			dX2[off] = lvls[1] * v[x * m.channels() + 1];
+			dX3[off] = lvls[1] * v[x * m.channels() + 2];
 		}
 	}
 
 	res.clipRange(0, 1);
 
-//	cv::Mat out;
-//	getMat(res, &out, ct::Size(IM_WIDTH, IM_HEIGHT));
-//	cv::imwrite("tmp.jpg", out);
+	cv::Mat out;
+	getMat(res, &out, ct::Size(IM_WIDTH, IM_HEIGHT));
+	cv::imwrite("tmp.jpg", out);
 
 	return res;
 }
