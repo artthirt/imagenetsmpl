@@ -224,7 +224,7 @@ void offsetImage(cv::Mat &image, cv::Scalar bordercolour, int xoffset, int yoffs
 
 
 ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, bool gray,
-							 ct::Vec3f& lvls, const Point &off)
+							 const ct::Vec3f& lvls, const Point &off)
 {
 	ct::Matf res;
 
