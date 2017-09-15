@@ -256,6 +256,7 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const
 
 //	cv::imwrite("ss.bmp", m);
 
+#if 0
 	if(!aug){
 		m.convertTo(m, CV_32F, 1./255., 0);
 	}else{
@@ -264,6 +265,9 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, const
 		float cntr = 0.3 * nd(m_gt);
 		m.convertTo(m, CV_32F, (0.95 + br)/255., 0);
 	}
+#else
+	m.convertTo(m, CV_32F, 1./255., 0);
+#endif
 
 	res.setSize(m.channels(), m.cols * m.rows);
 
