@@ -13,7 +13,7 @@ ImNetSmplGpu::ImNetSmplGpu()
 	m_learningRate = 0.001;
 	m_useBackConv = true;
 	m_init = false;
-	m_check_count = 400;
+	m_check_count = 600;
 	m_classes = 1000;
 	m_model = "model.bin";
 	m_save_model = "model.bin_ext";
@@ -102,20 +102,26 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 	for(int i = 0; i < pass; ++i){
 		std::cout << "pass " << i << "; batches in mem: " << m_reader->batches() << "     \r" << std::flush;
 
+#if 1
 		while(!m_reader->is_batch_exist()){
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 		Batch& btch = m_reader->front();
+//		std::vector< ct::Matf >& X	= btch.X;
+//		ct::Matf& y					= btch.y;
 
-		std::vector< ct::Matf >& X	= btch.X;
-		ct::Matf& y					= btch.y;
+		get_gX(btch.X, gX);
+		gpumat::convert_to_gpu(btch.y, gy);
 
-//		m_reader->get_batch(X, y, batch, true, true);
+		m_reader->pop_front();
+#else
+		std::vector< ct::Matf > X;
+		ct::Matf y;
+		m_reader->get_batch(X, y, batch, true, true);
 
 		get_gX(X, gX);
 		gpumat::convert_to_gpu(y, gy);
-
-		m_reader->pop_front();
+#endif
 
 //		std::cout << "pass " << i << "\r";
 //		qDebug("--> pass %d", i);
