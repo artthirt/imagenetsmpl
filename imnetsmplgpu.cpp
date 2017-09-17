@@ -5,8 +5,76 @@
 #include <QDir>
 #include <QFile>
 
-const int cnv_size = 7;
+const int cnv_size = 6;
 const int mlp_size = 3;
+
+///////////////////////
+
+template <typename T>
+std::vector<size_t> sort_indexes(const std::vector<T> &v) {
+
+  // initialize original index locations
+  std::vector<size_t> idx(v.size());
+  std::iota(idx.begin(), idx.end(), 0);
+
+  // sort indexes based on comparing values in v
+  std::sort(idx.begin(), idx.end(),
+	   [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+
+  return idx;
+}
+
+struct SortC{
+	SortC(){}
+	SortC(float p, int index): p(p), index(index){}
+	float p;
+	int index;
+};
+
+std::vector< SortC > sort_column(const ct::Matf& mat, int row)
+{
+	std::vector< SortC > res;
+	std::vector< SortC > sc;
+
+	float *dF = mat.ptr(row);
+	for(int i = 0; i < mat.cols; ++i){
+		sc.push_back(SortC(dF[i], i));
+	}
+	std::sort(sc.begin(), sc.end(), [](const SortC& s1, const SortC& s2){return s1.p > s2.p;});
+
+	res.resize(5);
+	std::copy(sc.begin(), sc.begin() + 5, res.begin());
+	return res;
+}
+
+double check2(const gpumat::GpuMat& prob, const ct::Matf& classes)
+{
+	if(classes.empty() || classes.rows != prob.rows || classes.cols != 1)
+		return -1.;
+
+	ct::Matf mp;
+	gpumat::convert_to_mat(prob, mp);
+
+	int idx = 0;
+	for(int i = 0; i < classes.rows; ++i){
+		std::vector< SortC > preds;
+		preds = sort_column(mp, i);
+		for(const SortC& s: preds){
+			if(s.p > 0.1 && s.index == classes.ptr(i)[0]){
+				idx++;
+				break;
+			}
+		}
+	}
+	double pred = (double)idx / classes.rows;
+
+//	std::cout << "predicted: " << ss.str() << std::endl;
+
+	return pred;
+}
+
+
+///////////////////////
 
 ImNetSmplGpu::ImNetSmplGpu()
 {
@@ -43,7 +111,7 @@ void ImNetSmplGpu::init()
 	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
 	m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
+//	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -71,7 +139,6 @@ void ImNetSmplGpu::init()
 	for(int i = 0; i < m_mlp.size(); ++i){
 		m_mlp[i].setDropout(0.94);
 	}
-
 
 	m_init = true;
 }
@@ -134,12 +201,12 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 //		printf("--> backward\r");
 		backward(gD);
 
-		if((i % 200) == 0 && i > 0 || i == 30){
+		if((i % 200) == 0/* && i > 0*/ || i == 30){
 			std::vector< ct::Matf > X;
 			ct::Matf y, p;
 
 			int idx = 0;
-			double ls = 0, pr = 0;
+			double ls = 0, pr = 0, pr2 = 0;
 			for(int i = 0; i <= m_check_count; i += batch, idx++){
 				m_reader->get_batch(X, y, batch);
 
@@ -153,12 +220,13 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 				ls += loss(gy, *gy_);
 				p = predict(*gy_);
 				pr += check(y, p);
+				pr2 += check2(*gy_, y);
 
 				printf("test: cur %d, all %d            \r", i, m_check_count);
 				std::cout << std::flush;
 			}
 			if(!idx)idx = 1;
-			printf("pass %d: loss=%f;\tpred=%f           \n", i, ls / idx, pr / idx);
+			printf("pass %d: loss=%f;\tpred=%f;\tpred2=%f           \n", i, ls/idx, pr/idx, pr2/idx);
 		}
 		if((i % 200) == 0 && i > 0){
 //			save_net(m_model);
@@ -554,9 +622,9 @@ void ImNetSmplGpu::load_net2(const QString &name)
 	fs.read((char*)&layers, sizeof(layers));
 	if(use_bn > 0){
 		for(int i = 0; i < layers; ++i){
-			size_t layer;
+			int64_t layer = -1;
 			fs.read((char*)&layer, sizeof(layer));
-			if(layer >= 0){
+			if(layer >=0 && layer < 10000){
 				m_conv[layer].bn.read(fs);
 //				gpumat::save_gmat(m_conv[layer].bn.gamma, "g" + std::to_string(layer) +".txt");
 //				gpumat::save_gmat(m_conv[layer].bn.betha, "b" + std::to_string(layer) +".txt");
