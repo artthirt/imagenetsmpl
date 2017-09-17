@@ -279,9 +279,9 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, bool 
 
 	res.clipRange(0, 1);
 
-	cv::Mat out;
-	getMat(res, &out, ct::Size(IM_WIDTH, IM_HEIGHT));
-	cv::imwrite("tmp.jpg", out);
+//	cv::Mat out;
+//	getMat(res, &out, ct::Size(IM_WIDTH, IM_HEIGHT));
+//	cv::imwrite("tmp.jpg", out);
 
 	return res;
 }
