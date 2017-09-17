@@ -5,7 +5,7 @@
 #include <QDir>
 #include <QFile>
 
-const int cnv_size = 6;
+const int cnv_size = 7;
 const int mlp_size = 3;
 
 ImNetSmplGpu::ImNetSmplGpu()
@@ -43,7 +43,7 @@ void ImNetSmplGpu::init()
 	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
 	m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -523,12 +523,13 @@ void ImNetSmplGpu::load_net2(const QString &name)
 
 #define USE_MLP 1
 
-	m_conv.resize(cnvs);
+	if(m_conv.size() < cnvs)
+		m_conv.resize(cnvs);
 #if USE_MLP
 	m_mlp.resize(mlps);
 #endif
 	printf("conv\n");
-	for(size_t i = 0; i < m_conv.size(); ++i){
+	for(size_t i = 0; i < cnvs; ++i){
 		gpumat::convnn_gpu &cnv = m_conv[i];
 		cnv.read2(fs);
 		printf("layer %d: rows %d, cols %d\n", i, cnv.W.rows, cnv.W.cols);
