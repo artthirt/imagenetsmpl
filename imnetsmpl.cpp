@@ -11,8 +11,8 @@
 
 #include <chrono>
 
-const int cnv_size = 7;
-const int mlp_size = 2;
+const int cnv_size = 6;
+const int mlp_size = 3;
 
 ImNetSmpl::ImNetSmpl()
 {
@@ -44,12 +44,12 @@ void ImNetSmpl::init()
 	m_conv.resize(cnv_size);
 
 	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), ct::LEAKYRELU, false, true, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3), ct::LEAKYRELU, true, true, true);
-	m_conv[2].init(m_conv[1].szOut(), 128, 1, 128, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
+	m_conv[1].init(m_conv[0].szOut(), 64, 2, 64, ct::Size(5, 5), ct::LEAKYRELU, false, true, true);
+	m_conv[2].init(m_conv[1].szOut(), 64, 2, 128, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
 	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, true, true, true);
-	m_conv[4].init(m_conv[3].szOut(), 256, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
-	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, true, true, true);
-	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, true, true, true);
+	m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
+	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
+//	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -57,9 +57,9 @@ void ImNetSmpl::init()
 
 	m_mlp.resize(mlp_size);
 
-	m_mlp[0].init(outFeatures, 4096, ct::LEAKYRELU);
-//	m_mlp[1].init(4096, 2048);
-	m_mlp[1].init(4096, m_classes, ct::SOFTMAX);
+	m_mlp[0].init(outFeatures,	4096,		ct::LEAKYRELU);
+	m_mlp[1].init(4096,			4096,		ct::LEAKYRELU);
+	m_mlp[2].init(4096,			m_classes,	ct::SOFTMAX);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
@@ -109,7 +109,7 @@ void ImNetSmpl::doPass(int passes, int batch)
 //		printf("--> backward\r");
 		backward(Dlt);
 
-		if(((pass % m_check_pass) == 0 && pass > 0) || pass == 30){
+		if(((pass % m_check_pass) == 0) || pass == 30){
 			std::vector< ct::Matf > X;
 			ct::Matf y, y_, p;
 
@@ -394,6 +394,25 @@ void ImNetSmpl::save_net2(const QString &name)
 		m_mlp[i].write2(fs);
 	}
 
+	int use_bn = 0, layers = 0;
+	for(conv2::convnn2_mixed& item: m_conv){
+		if(item.use_bn()){
+			use_bn = 1;
+			layers++;
+		}
+	}
+
+	fs.write((char*)&use_bn, sizeof(use_bn));
+	fs.write((char*)&layers, sizeof(layers));
+	if(use_bn > 0){
+		for(size_t i = 0; i < m_conv.size(); ++i){
+			if(m_conv[i].use_bn()){
+				fs.write((char*)&i, sizeof(i));
+				m_conv[i].bn.write(fs);
+			}
+		}
+	}
+
 	printf("model saved.\n");
 
 }
@@ -430,21 +449,38 @@ void ImNetSmpl::load_net2(const QString &name)
 
 	printf("Load model: conv size %d, mlp size %d", cnvs, mlps);
 
-	m_conv.resize(cnvs);
-	m_mlp.resize(mlps);
+	if(m_conv.size() < cnvs)
+		m_conv.resize(cnvs);
+	if(m_mlp.size() < mlps)
+		m_mlp.resize(mlps);
 
 	printf("conv\n");
-	for(size_t i = 0; i < m_conv.size(); ++i){
+	for(size_t i = 0; i < cnvs; ++i){
 		conv2::convnn2_mixed &cnv = m_conv[i];
 		cnv.read2(fs);
 		printf("layer %d: rows %d, cols %d\n", i, cnv.W.rows, cnv.W.cols);
 	}
 
 	printf("mlp\n");
-	for(size_t i = 0; i < m_mlp.size(); ++i){
+	for(size_t i = 0; i < mlps; ++i){
 		ct::mlp_mixed &mlp = m_mlp[i];
 		mlp.read2(fs);
 		printf("layer %d: rows %d, cols %d\n", i, mlp.W.rows, mlp.W.cols);
+	}
+
+	int use_bn = 0, layers = 0;
+	fs.read((char*)&use_bn, sizeof(use_bn));
+	fs.read((char*)&layers, sizeof(layers));
+	if(use_bn > 0){
+		for(int i = 0; i < layers; ++i){
+			int64_t layer = -1;
+			fs.read((char*)&layer, sizeof(layer));
+			if(layer >=0 && layer < 10000){
+				m_conv[layer].bn.read(fs);
+//				gpumat::save_gmat(m_conv[layer].bn.gamma, "g" + std::to_string(layer) +".txt");
+//				gpumat::save_gmat(m_conv[layer].bn.betha, "b" + std::to_string(layer) +".txt");
+			}
+		}
 	}
 
 	printf("model loaded.\n");

@@ -50,7 +50,7 @@ win32{
     LIBS += -L$$OPENCV3_DIR/x64/vc14/lib $$libs
 }else{
     QMAKE_CXXFLAGS += -fopenmp
-    LIBS += -l:libopencv_core.so.3.2 -l:libopencv_highgui.so.3.2 -l:libopencv_imgproc.so.3.2 -l:libopencv_imgcodecs.so.3.2 -ltbb -lgomp
+    LIBS += -l:libopencv_core.so -l:libopencv_highgui.so -l:libopencv_imgproc.so -l:libopencv_imgcodecs.so -ltbb -lgomp
 }
 
 # The following define makes your compiler emit warnings if you use

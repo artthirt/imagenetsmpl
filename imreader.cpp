@@ -80,7 +80,11 @@ ImReader::ImReader(int seed)
 	m_thread = 0;
 	m_done = false;
 
+#ifndef CV_MAJOR_VERSION == 3 && CV_MINOR_VERSION == 1
 	cv::setRNGSeed(seed);
+#else
+	cv::theRNG().state = seed;
+#endif
 	_rnd.seed(seed);
 }
 
@@ -92,7 +96,11 @@ ImReader::ImReader(const QString& pathToImages, int seed)
 	m_thread = 0;
 	m_done = false;
 
+#ifndef CV_MAJOR_VERSION == 3 && CV_MINOR_VERSION == 1
 	cv::setRNGSeed(seed);
+#else
+	cv::theRNG().state = seed;
+#endif
 	_rnd.seed(seed);
 	m_image_path = pathToImages;
 	init();
@@ -127,7 +135,10 @@ void ImReader::init()
 
 		std::vector< std::string > files;
 		for(uint j = 0; j < inDir.count(); ++j){
-			files.push_back(QString(dir[i] + "/" + inDir[j]).toStdString());
+			QString sfile = inDir[j];
+			if(sfile == "." || sfile == "..")
+				continue;
+			files.push_back(QString(dir[i] + "/" + sfile).toStdString());
 		}
 		m_all_count += files.size();
 		qDebug() << numb++ << ": FILES[" << dir[i] << ", " << imnet::getNumberOfList(dir[i].toStdString()) << "]=" << files.size();
@@ -222,11 +233,23 @@ void offsetImage(cv::Mat &image, cv::Scalar bordercolour, int xoffset, int yoffs
 	warpAffine(image, image, M, image.size());
 }
 
+bool is_file_exists(const std::string& fn)
+{
+	if (FILE *file = fopen(fn.c_str(), "r")) {
+		fclose(file);
+		return true;
+	} else {
+		return false;
+	}
+}
 
 ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, bool gray,
 							 const ct::Vec3f& lvls, const Point &off)
 {
 	ct::Matf res;
+
+	if(!is_file_exists(name))
+		return res;
 
 	cv::Mat m = cv::imread(name);
 	if(m.empty())
