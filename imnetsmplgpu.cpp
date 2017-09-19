@@ -687,8 +687,8 @@ void ImNetSmplGpu::check_delta(const gpumat::GpuMat &g_D, const Batch &btch)
 	for(size_t i = 0; i < std::min((size_t)20, idx.size()); ++i){
 		int id = idx[i];
 		float f = df[id];
-		if(f > 0.5){
+        if(f > 0.5){
 			m_reader->push_to_saved(btch.X[id], btch.y.ptr(id)[0]);
 		}
-	}
+    }
 }
