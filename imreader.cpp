@@ -177,10 +177,10 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 		std::fill(bflip.begin(), bflip.end(), false);
 	}
 
-	int off = 0;
+	uint off = 0;
 
 	{
-		if(m_saved.size()){
+		if(m_saved.size() && aug){
 			int cnt = std::min(batch/3, FOR_REPEAT_BATCH);
 			if(!cnt) cnt = std::max(1, batch/2);
 			for(int off = 0; off < cnt && !m_saved.empty(); ++off){
