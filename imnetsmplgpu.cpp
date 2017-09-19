@@ -11,15 +11,20 @@ const int mlp_size = 3;
 ///////////////////////
 
 template <typename T>
-std::vector<size_t> sort_indexes(const std::vector<T> &v) {
+std::vector<size_t> sort_indexes(const std::vector<T> &v, int ascend = 0) {
 
   // initialize original index locations
   std::vector<size_t> idx(v.size());
   std::iota(idx.begin(), idx.end(), 0);
 
+  if(ascend == 0){
   // sort indexes based on comparing values in v
-  std::sort(idx.begin(), idx.end(),
-	   [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+	  std::sort(idx.begin(), idx.end(),
+		   [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+  }else{
+	  std::sort(idx.begin(), idx.end(),
+		   [&v](size_t i1, size_t i2) {return v[i1] > v[i2];});
+  }
 
   return idx;
 }
@@ -180,7 +185,6 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 		get_gX(btch.X, gX);
 		gpumat::convert_to_gpu(btch.y, gy);
 
-		m_reader->pop_front();
 #else
 		std::vector< ct::Matf > X;
 		ct::Matf y;
@@ -198,6 +202,9 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 
 		gpumat::subIndOne(*gy_, gy, gD);
 
+		check_delta(gD, btch);
+
+		m_reader->pop_front();
 //		printf("--> backward\r");
 		backward(gD);
 
@@ -653,5 +660,35 @@ void ImNetSmplGpu::set_train(bool val)
 {
 	for(gpumat::convnn_gpu& item: m_conv){
 		item.setTrainMode(val);
+	}
+}
+
+void ImNetSmplGpu::check_delta(const gpumat::GpuMat &g_D, const Batch &btch)
+{
+	gpumat::GpuMat g_Out, g_R;
+	gpumat::elemwiseSqr(g_D, g_Out);
+	gpumat::sumCols(g_Out, g_R, 1);
+	ct::Matf d;
+
+	gpumat::save_gmat(g_Out, "out.txt");
+	gpumat::save_gmat(g_R, "out1.txt");
+
+	gpumat::convert_to_mat(g_R, d);
+
+	std::vector< float > df;
+	std::vector< size_t > idx;
+	for(int i = 0; i < d.rows; ++i){
+		float *dF = d.ptr(i);
+		float F = dF[0];
+		df.push_back(F);
+	}
+	idx = sort_indexes(df, 1);
+
+	for(size_t i = 0; i < std::min((size_t)20, idx.size()); ++i){
+		int id = idx[i];
+		float f = df[id];
+		if(f > 0.5){
+			m_reader->push_to_saved(btch.X[id], btch.y.ptr(id)[0]);
+		}
 	}
 }

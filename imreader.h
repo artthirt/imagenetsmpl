@@ -9,6 +9,9 @@
 #include <list>
 #include <mutex>
 
+#define MAX_SAVED			50
+#define FOR_REPEAT_BATCH	20
+
 struct Point{
 	Point(){
 		x = 0; y = 0;
@@ -33,6 +36,16 @@ struct Batch{
 		this->X = X;
 		this->y = y;
 	}
+};
+
+struct Saved{
+	Saved(): id(0){}
+	Saved(const ct::Matf& _X, float _id){
+		_X.copyTo(X);
+		id = _id;
+	}
+	ct::Matf X;
+	float id;
 };
 
 /**
@@ -74,6 +87,8 @@ public:
 	void start();
 	void run();
 
+	void push_to_saved(const ct::Matf& X, float id);
+
 private:
 	std::mt19937 m_gt;
 
@@ -89,6 +104,8 @@ private:
 	std::vector< std::vector< std::string > > m_files;
 	int m_all_count;
 	QString m_image_path;
+
+	std::list< Saved > m_saved;
 };
 
 #endif // IMREADER_H

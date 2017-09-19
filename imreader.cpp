@@ -177,8 +177,22 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 		std::fill(bflip.begin(), bflip.end(), false);
 	}
 
+	int off = 0;
+
+	{
+		if(m_saved.size()){
+			int cnt = std::min(batch/3, FOR_REPEAT_BATCH);
+			if(!cnt) cnt = std::max(1, batch/2);
+			for(int off = 0; off < cnt && !m_saved.empty(); ++off){
+				X[off] = m_saved.front().X;
+				y.ptr(off)[0] = m_saved.front().id;
+				m_saved.pop_front();
+			}
+		}
+	}
+
 //#pragma omp parallel for
-	for(uint i = 0; i < batch; ++i){
+	for(uint i = off; i < batch; ++i){
 		int id1 = ui(_rnd);//shuffle[i];
 
 		int len = m_files[id1].size();
@@ -400,4 +414,12 @@ void ImReader::run()
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 	}
+}
+
+void ImReader::push_to_saved(const ct::Matf &X, float id)
+{
+	if(m_saved.size() > MAX_SAVED){
+		return;
+	}
+	m_saved.push_back(Saved(X, id));
 }

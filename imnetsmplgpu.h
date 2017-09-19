@@ -65,6 +65,8 @@ public:
 
 	void set_train(bool val);
 
+	void check_delta(const gpumat::GpuMat& g_D, const Batch& btch);
+
 private:
 	ImReader *m_reader;
 	double m_learningRate;
