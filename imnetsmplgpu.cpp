@@ -670,8 +670,8 @@ void ImNetSmplGpu::check_delta(const gpumat::GpuMat &g_D, const Batch &btch)
 	gpumat::sumCols(g_Out, g_R, 1);
 	ct::Matf d;
 
-	gpumat::save_gmat(g_Out, "out.txt");
-	gpumat::save_gmat(g_R, "out1.txt");
+//	gpumat::save_gmat(g_Out, "out.txt");
+//	gpumat::save_gmat(g_R, "out1.txt");
 
 	gpumat::convert_to_mat(g_R, d);
 
@@ -684,7 +684,7 @@ void ImNetSmplGpu::check_delta(const gpumat::GpuMat &g_D, const Batch &btch)
 	}
 	idx = sort_indexes(df, 1);
 
-	for(size_t i = 0; i < std::min((size_t)20, idx.size()); ++i){
+	for(size_t i = 0; i < std::min((size_t)FOR_REPEAT_BATCH, idx.size()); ++i){
 		int id = idx[i];
 		float f = df[id];
 		if(f > 0.5){
