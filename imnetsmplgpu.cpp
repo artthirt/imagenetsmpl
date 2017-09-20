@@ -5,8 +5,10 @@
 #include <QDir>
 #include <QFile>
 
-const int cnv_size = 6;
+const int cnv_size = 8;
 const int mlp_size = 3;
+
+const int stop_cnv_layer = 6;
 
 ///////////////////////
 
@@ -116,7 +118,8 @@ void ImNetSmplGpu::init()
 	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
 	m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
+	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
+	m_conv[7].init(m_conv[6].szOut(), 1024, 1, 1024, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -133,6 +136,8 @@ void ImNetSmplGpu::init()
 
 	m_cnv_optim.init(m_conv);
 	m_cnv_optim.setAlpha(m_learningRate);
+
+	m_cnv_optim.stop_layer = stop_cnv_layer;
 
 //	m_optim.setDelimiterIteration(16);
 //	m_cnv_optim.setDelimiterIteration(16);
@@ -293,11 +298,14 @@ void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 		gpumat::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, m_deltas);
 
 	//	printf("-cnv4        \r");
-		m_conv.back().backward(m_deltas);
+		//m_conv.back().backward(m_deltas);
 
-		for(int i = m_conv.size() - 2; i >= 0; i--){
+		std::vector< gpumat::GpuMat > *pD = &m_deltas;
+
+		for(int i = m_conv.size() - 1; i >= stop_cnv_layer; i--){
 		//	printf("-cnv3        \r");
-			m_conv[i].backward(m_conv[i + 1].Dlt, i == 0);
+			m_conv[i].backward(*pD, i == stop_cnv_layer);
+			pD = &m_conv[i].Dlt;
 		//	printf("-cnv2        \r");
 	//		m_conv[2].backward(m_conv[3].Dlt);
 	//	//	printf("-cnv1        \r");
@@ -596,7 +604,7 @@ void ImNetSmplGpu::load_net2(const QString &name)
 
 	printf("Load model: conv size %d, mlp size %d\n", cnvs, mlps);
 
-#define USE_MLP 1
+#define USE_MLP 0
 
 	if(m_conv.size() < cnvs)
 		m_conv.resize(cnvs);
