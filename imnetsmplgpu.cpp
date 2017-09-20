@@ -604,7 +604,7 @@ void ImNetSmplGpu::load_net2(const QString &name)
 
 	printf("Load model: conv size %d, mlp size %d\n", cnvs, mlps);
 
-#define USE_MLP 0
+#define USE_MLP 1
 
 	if(m_conv.size() < cnvs)
 		m_conv.resize(cnvs);
