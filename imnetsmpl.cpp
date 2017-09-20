@@ -11,7 +11,7 @@
 
 #include <chrono>
 
-const int cnv_size = 6;
+const int cnv_size = 8;
 const int mlp_size = 3;
 
 ImNetSmpl::ImNetSmpl()
@@ -49,7 +49,8 @@ void ImNetSmpl::init()
 	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, true, true, true);
 	m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
 	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
-//	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
+	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(1, 1), ct::LEAKYRELU, false, true, true);
+	m_conv[7].init(m_conv[6].szOut(), 1024, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
