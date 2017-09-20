@@ -119,7 +119,7 @@ void ImNetSmplGpu::init()
     m_conv[4].init(m_conv[3].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
-    m_conv[7].init(m_conv[6].szOut(), 1024, 1, 1024, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[7].init(m_conv[6].szOut(), 1024, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
