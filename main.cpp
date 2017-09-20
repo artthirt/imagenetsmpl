@@ -95,13 +95,15 @@ void test2()
 {
 	int c_rows = 35;
 	int c_cols = 10;
+	int c_channels = 2;
 
-	ct::Matf A(c_rows, c_cols), B = ct::Matf::ones(3, 3), C, D;
+	ct::Matf A(c_rows, c_cols * c_channels), B = ct::Matf::ones(c_channels * 3 * 3, 2), C, D;
 
-	for(int i = 0, k = 1; i < A.rows; ++i){
+	for(int i = 0, k = 1; i < c_rows; ++i){
 		float *dA = A.ptr(i);
-		for(int j = 0; j < A.cols; ++j, ++k){
-			dA[j] = k;
+		for(int j = 0; j < c_cols; ++j, ++k){
+			dA[c_channels * j + 0] = k;
+			dA[c_channels * j + 1] = k;
 		}
 	}
 //	A = A.t();
@@ -110,20 +112,21 @@ void test2()
 
 	ct::Size szOut;
 
-	conv2::conv2(A, ct::Size(c_cols, c_rows), 1, 2, B, ct::Size(3, 3), C, szOut, conv2::SAME);
+	conv2::conv2(A, ct::Size(c_cols, c_rows), c_channels, 1, B, ct::Size(3, 3), C, szOut, conv2::SAME, true);
 
 	int rows = C.rows;
 	int cols = C.cols;
 
 	C.rows = szOut.height;
-	C.cols = szOut.width;
+	C.cols = szOut.width * c_channels;
 
 	std::cout << C.print() << std::endl;
+	ct::save_mat(C, "C.txt");
 
 	C.rows = rows;
 	C.cols = cols;
 
-	conv2::conv2_transpose(C, ct::Size(c_cols, c_rows), 1, 2, B, ct::Size(3, 3), szOut, D, conv2::SAME);
+	conv2::conv2_transpose(C, ct::Size(c_cols, c_rows), c_channels, 1, B, ct::Size(3, 3), szOut, D, conv2::SAME, true);
 
 	D.rows = c_rows;
 	D.cols = c_cols;
@@ -136,17 +139,18 @@ void test2()
 	gpumat::convert_to_gpu(A, g_A);
 	gpumat::convert_to_gpu(B, g_B);
 
-	gpumat::conv2(g_A, ct::Size(c_cols, c_rows), 1, 2, g_B, ct::Size(3, 3), g_C, szOut, gpumat::SAME);
+	gpumat::conv2(g_A, ct::Size(c_cols, c_rows), c_channels, 1, g_B, ct::Size(3, 3), g_C, szOut, gpumat::SAME, true);
 
 	g_C.rows = szOut.height;
-	g_C.cols = szOut.width;
+	g_C.cols = szOut.width * c_channels;
 
 	std::cout << g_C.print() << std::endl;
+	gpumat::save_gmat(g_C, "g_C.txt");
 
 	g_C.rows = rows;
 	g_C.cols = cols;
 
-	gpumat::conv2_transpose(g_C, ct::Size(c_cols, c_rows), 1, 2, g_B, ct::Size(3, 3), szOut, g_D, gpumat::SAME);
+	gpumat::conv2_transpose(g_C, ct::Size(c_cols, c_rows), c_channels, 1, g_B, ct::Size(3, 3), szOut, g_D, gpumat::SAME, true);
 
 	g_D.rows = c_rows;
 	g_D.cols = c_cols;
