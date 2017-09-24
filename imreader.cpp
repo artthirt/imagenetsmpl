@@ -285,14 +285,14 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, bool 
 
 //	cv::imwrite("ss.bmp", m);
 
-#if 0
+#if 1
 	if(!aug){
 		m.convertTo(m, CV_32F, 1./255., 0);
 	}else{
 		std::normal_distribution<float> nd(0, 0.1);
 		float br = nd(m_gt);
 		float cntr = 0.3 * nd(m_gt);
-		m.convertTo(m, CV_32F, (0.95 + br)/255., 0);
+		m.convertTo(m, CV_32F, (0.95 + br)/255., cntr);
 	}
 #else
 	m.convertTo(m, CV_32F, 1./255., 0);
@@ -308,9 +308,9 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, bool 
 		float* dX3 = res.ptr(2);
 		for(int x = 0; x < m.cols; ++x){
 			int off = y * m.cols + x;
-			dX1[off] = /*lvls[0] * */v[x * m.channels() + 0];
-			dX2[off] = /*lvls[1] * */v[x * m.channels() + 1];
-			dX3[off] = /*lvls[1] * */v[x * m.channels() + 2];
+			dX1[off] = lvls[0] * v[x * m.channels() + 0];
+			dX2[off] = lvls[1] * v[x * m.channels() + 1];
+			dX3[off] = lvls[1] * v[x * m.channels() + 2];
 		}
 	}
 

@@ -8,7 +8,7 @@
 const int cnv_size = 8;
 const int mlp_size = 3;
 
-const int stop_cnv_layer = 6;
+//const int stop_cnv_layer = 6;
 
 ///////////////////////
 
@@ -85,6 +85,7 @@ double check2(const gpumat::GpuMat& prob, const ct::Matf& classes)
 
 ImNetSmplGpu::ImNetSmplGpu()
 {
+	m_layer_from = 0;
 	m_learningRate = 0.001;
 	m_useBackConv = true;
 	m_init = false;
@@ -104,6 +105,12 @@ void ImNetSmplGpu::setLearningRate(double lr)
 	m_learningRate = lr;
 	m_optim.setAlpha(m_learningRate);
 	m_cnv_optim.setAlpha(m_learningRate);
+}
+
+void ImNetSmplGpu::setLayerFrom(int val)
+{
+	m_layer_from = val;
+	m_cnv_optim.stop_layer = m_layer_from;
 }
 
 void ImNetSmplGpu::init()
@@ -137,7 +144,7 @@ void ImNetSmplGpu::init()
 	m_cnv_optim.init(m_conv);
 	m_cnv_optim.setAlpha(m_learningRate);
 
-	m_cnv_optim.stop_layer = stop_cnv_layer;
+	m_cnv_optim.stop_layer = m_layer_from;
 
 //	m_optim.setDelimiterIteration(16);
 //	m_cnv_optim.setDelimiterIteration(16);
@@ -302,9 +309,9 @@ void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 
 		std::vector< gpumat::GpuMat > *pD = &m_deltas;
 
-		for(int i = m_conv.size() - 1; i >= stop_cnv_layer; i--){
+		for(int i = m_conv.size() - 1; i >= m_layer_from; i--){
 		//	printf("-cnv3        \r");
-			m_conv[i].backward(*pD, i == stop_cnv_layer);
+			m_conv[i].backward(*pD, i == m_layer_from);
 			pD = &m_conv[i].Dlt;
 		//	printf("-cnv2        \r");
 	//		m_conv[2].backward(m_conv[3].Dlt);

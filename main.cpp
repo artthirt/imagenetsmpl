@@ -53,6 +53,9 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-backconv" && i < argc){
 			res["backconv"] = argv[i + 1];
 		}
+		if(str == "-train_layer_from" && i < argc){
+			res["train_layer_from"] = argv[i + 1];
+		}
 	}
 	return res;
 }
@@ -201,7 +204,8 @@ int main(int argc, char *argv[])
 			   "-save path/to/model				- name for saved train model"
 			   "-load2 path/to/model			- load extension model with information about sizes of layers and matrices"
 			   "-seed number					- seed for set random seed for train"
-			   "-backconv bool					- use or not bakward pass for convolution");
+			   "-backconv bool					- use or not bakward pass for convolution"
+			   "-train_layer_from				- train conv layers from this to end");
 		return 1;
 	}
 
@@ -223,6 +227,7 @@ int main(int argc, char *argv[])
 	int pass = 1000;
 	bool backconv = true;
 	double lr = 0.001;
+	int train_layer_from = 0;
 
 	printf("Startup\n");
 
@@ -241,12 +246,16 @@ int main(int argc, char *argv[])
 	if(contain(res, "backconv")){
 		backconv = std::stoi(res["backconv"]);
 	}
+	if(contain(res, "train_layer_from")){
+		train_layer_from = std::stoi(res["train_layer_from"]);
+	}
 
 	printf("pass %d\n", pass);
 	printf("batch %d\n", batch);
 	printf("learning rate %f\n", lr);
 	printf("seed %d\n", seed);
 	printf("use backward convolution %d\n", backconv);
+	printf("train_layer_from %d\n", train_layer_from);
 
 	//printf("Parameters startup: pass=%d, batch=%d, lr=%f\n", pass, batch, lr);
 
@@ -255,6 +264,7 @@ int main(int argc, char *argv[])
 		imnetSmpl.setReader(&ir);
 		imnetSmpl.setLearningRate(lr);
 		imnetSmpl.setUseBackConv(backconv);
+		imnetSmpl.setLayerFrom(train_layer_from);
 
 		if(contain(res, "load")){
 			printf("load simple model '%s'\n", res["load"].c_str());

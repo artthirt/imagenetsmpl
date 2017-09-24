@@ -15,6 +15,7 @@ public:
 
 	void setReader(ImReader* ir);
 	void setLearningRate(double lr);
+	void setLayerFrom(int val);
 
 	void init();
 	void doPass(int pass, int batch);
@@ -70,6 +71,7 @@ public:
 private:
 	ImReader *m_reader;
 	double m_learningRate;
+	int m_layer_from;
 
 	bool m_useBackConv;
 
