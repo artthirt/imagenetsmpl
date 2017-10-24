@@ -12,6 +12,25 @@
 #define MAX_SAVED			50
 #define FOR_REPEAT_BATCH	20
 
+struct Aug{
+	Aug();
+	bool augmentation;
+	bool vflip;
+	bool hflip;
+	int xoff;
+	int yoff;
+	float kr;
+	float kg;
+	float kb;
+	float contrast;
+	float zoomx;
+	float zoomy;
+	bool inv;
+	bool gray;
+
+	void gen(std::mt19937& gn);
+};
+
 struct Point{
 	Point(){
 		x = 0; y = 0;
@@ -71,8 +90,7 @@ public:
 
 	void get_batch(std::vector< ct::Matf >& X, ct::Matf& y, int batch, bool flip = false, bool aug = false);
 
-	ct::Matf get_image(const std::string& name, bool flip = false, bool aug = false, bool gray = false,
-					   const ct::Vec3f &lvls = ct::Vec3f(1, 1, 1), const Point& off = Point());
+	ct::Matf get_image(const std::string& name, const Aug &aug = Aug());
 
 	void getMat(const ct::Matf &in, cv::Mat *out, const ct::Size sz);
 

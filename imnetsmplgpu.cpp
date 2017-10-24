@@ -154,7 +154,7 @@ void ImNetSmplGpu::init()
 	}
 
 	for(int i = 0; i < m_mlp.size(); ++i){
-		m_mlp[i].setDropout(0.94);
+		m_mlp[i].setDropout(0.9);
 	}
 
 	m_init = true;

@@ -200,24 +200,12 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 		std::uniform_int_distribution<int> un(0, len - 1);
 		int id2 = un(_rnd);
 
-		int xoff = 0, yoff = 0;
+		Aug _aug;
+		if(aug)
+			_aug.gen(m_gt);
 
-		if(aug){
-			std::normal_distribution<float> nd(0, IM_WIDTH * 0.05);
-			xoff = nd(m_gt);
-			yoff = nd(m_gt);
-		}
 
-		bool is_gray = false;
-		ct::Vec3f lvls = ct::Vec3f(1, 1, 1);
-		if(aug){
-			is_gray = bn(_rnd);
-			lvls[0] = nl(_rnd);
-			lvls[1] = nl(_rnd);
-			lvls[2] = nl(_rnd);
-		}
-
-		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], bflip[i], aug, is_gray, lvls, Point(xoff, yoff));
+		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], _aug);
 		if(!Xi.empty()){
 			X[i] = Xi;
 			std::string n = m_dirs[id1];
@@ -257,8 +245,7 @@ bool is_file_exists(const std::string& fn)
 	}
 }
 
-ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, bool gray,
-							 const ct::Vec3f& lvls, const Point &off)
+ct::Matf ImReader::get_image(const std::string &name, const Aug &aug)
 {
 	ct::Matf res;
 
@@ -270,29 +257,63 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, bool 
 		return res;
 	cv::resize(m, m, cv::Size(IM_WIDTH, IM_HEIGHT));
 //	m = GetSquareImage(m, ImReader::IM_WIDTH);
+	int W = IM_WIDTH;
 
-	if(flip){
-		cv::flip(m, m, 1);
+	if(aug.zoomx != 1.f || aug.zoomy != 1.f){
+		int _Wx = (float)W * aug.zoomx;
+		int _Wy = (float)W * aug.zoomy;
+		cv::resize(m, m, cv::Size(_Wx, _Wy));
+		if(aug.zoomx < 1 && aug.zoomy < 1){
+			cv::Mat r = cv::Mat::zeros(cv::Size(W, W), CV_8UC3);
+			m.copyTo(r(cv::Rect(W/2 - m.cols/2, W/2 - m.rows/2, m.cols, m.rows)));
+			r.copyTo(m);
+		}else if(aug.zoomx < 1 && aug.zoomy > 1){
+			cv::Mat r = cv::Mat::zeros(cv::Size(W, W), CV_8UC3);
+			m(cv::Rect(0, _Wy/2 - W/2, _Wx, W )).copyTo(m);
+			m.copyTo(r(cv::Rect(W/2 - m.cols/2, W/2 - m.rows/2, m.cols, m.rows)));
+			r.copyTo(m);
+		}else if(aug.zoomx > 1 && aug.zoomy < 1){
+			cv::Mat r = cv::Mat::zeros(cv::Size(W, W), CV_8UC3);
+			m(cv::Rect(_Wx/2 - W/2, 0 , W, _Wy)).copyTo(m);
+			m.copyTo(r(cv::Rect(m.cols/2 - W/2, W/2 - m.rows/2, W, m.rows)));
+			r.copyTo(m);
+		}else{
+			m(cv::Rect(_Wx/2 - W/2, _Wy/2 - W/2, W, W)).copyTo(m);
+		}
+	}
+
+	if(aug.vflip || aug.hflip){
+		if(aug.hflip && !aug.vflip){
+			cv::flip(m, m, 1);
+//			std::cout << "1\n";
+		}else
+		if(aug.vflip && !aug.hflip){
+			cv::flip(m, m, 0);
+//			std::cout << "2\n";
+		}else{
+			cv::flip(m, m, -1);
+//			std::cout << "3\n";
+		}
 	}
 
 //	if(aug && off.x != 0 && off.y != 0){
 //		offsetImage(m, cv::Scalar(0), off.x, off.y);
 //	}
-	if(gray){
-		cv::cvtColor(m, m, cv::COLOR_BGR2GRAY);
-		cv::cvtColor(m, m, cv::COLOR_GRAY2BGR);
+	if(aug.inv){
+		cv::bitwise_not(m, m);
+	}else{
+		if(aug.gray){
+			cv::cvtColor(m, m, CV_RGB2GRAY);
+			cv::cvtColor(m, m, CV_GRAY2RGB);
+		}
 	}
-
 //	cv::imwrite("ss.bmp", m);
 
 #if 1
-	if(!aug){
+	if(!aug.augmentation){
 		m.convertTo(m, CV_32F, 1./255., 0);
 	}else{
-		std::normal_distribution<float> nd(0, 0.1);
-		float br = nd(m_gt);
-		float cntr = 0.3 * nd(m_gt);
-		m.convertTo(m, CV_32F, (0.95 + br)/255., cntr);
+		m.convertTo(m, CV_32F, 1./255., aug.contrast);
 	}
 #else
 	m.convertTo(m, CV_32F, 1./255., 0);
@@ -308,9 +329,9 @@ ct::Matf ImReader::get_image(const std::string &name, bool flip, bool aug, bool 
 		float* dX3 = res.ptr(2);
 		for(int x = 0; x < m.cols; ++x){
 			int off = y * m.cols + x;
-			dX1[off] = lvls[0] * v[x * m.channels() + 0];
-			dX2[off] = lvls[1] * v[x * m.channels() + 1];
-			dX3[off] = lvls[1] * v[x * m.channels() + 2];
+			dX1[off] = aug.kr * v[x * m.channels() + 0];
+			dX2[off] = aug.kg * v[x * m.channels() + 1];
+			dX3[off] = aug.kb * v[x * m.channels() + 2];
 		}
 	}
 
@@ -422,4 +443,40 @@ void ImReader::push_to_saved(const ct::Matf &X, float id)
 		return;
 	}
 	m_saved.push_back(Saved(X, id));
+}
+
+///////////////////////////////////
+
+///////////////////////////
+
+Aug::Aug()
+{
+	augmentation = false;
+	vflip = hflip = false;
+	xoff = yoff = contrast = 0;
+	kr = kb = kg = 1.;
+	zoomx = 1;
+	zoomy = 1;
+	inv = false;
+	gray = false;
+}
+
+void Aug::gen(std::mt19937 &gn)
+{
+	augmentation = true;
+	std::uniform_real_distribution<float> noff(-ImReader::IM_WIDTH * 0.03, ImReader::IM_HEIGHT * 0.03);
+	xoff = noff(gn);
+	yoff = noff(gn);
+	std::uniform_real_distribution<float> nrgb(-0.1, 0.1);
+	contrast = nrgb(gn);
+	kr = 0.95 + nrgb(gn);
+	kg = 0.95 + nrgb(gn);
+	kb = 0.95 + nrgb(gn);
+	zoomx = 1 + 1. * nrgb(gn);
+	zoomy = 1 + 1. * nrgb(gn);
+	std::binomial_distribution<int> bd(1, 0.5);
+	//vflip = bd(gn);
+	hflip = bd(gn);
+	inv = bd(gn);
+	gray = bd(gn);
 }
