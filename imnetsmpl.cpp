@@ -11,8 +11,8 @@
 
 #include <chrono>
 
-const int cnv_size = 8;
-const int mlp_size = 3;
+const int cnv_size = 9;
+const int mlp_size = 2;
 
 ImNetSmpl::ImNetSmpl()
 {

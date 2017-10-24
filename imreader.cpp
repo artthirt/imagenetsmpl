@@ -464,11 +464,11 @@ void Aug::gen(std::mt19937 &gn)
 	kr = 0.95 + nrgb(gn);
 	kg = 0.95 + nrgb(gn);
 	kb = 0.95 + nrgb(gn);
-	zoomx = 1 + 1. * nrgb(gn);
-	zoomy = 1 + 1. * nrgb(gn);
+    zoomx = 1 + 2. * nrgb(gn);
+    zoomy = 1 + 2. * nrgb(gn);
 	std::binomial_distribution<int> bd(1, 0.5);
 	//vflip = bd(gn);
 	hflip = bd(gn);
-	inv = bd(gn);
+//	inv = bd(gn);
 	gray = bd(gn);
 }
