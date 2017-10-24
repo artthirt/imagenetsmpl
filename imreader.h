@@ -88,7 +88,7 @@ public:
 
 	void init();
 
-	void get_batch(std::vector< ct::Matf >& X, ct::Matf& y, int batch, bool flip = false, bool aug = false);
+	void get_batch(std::vector< ct::Matf >& X, ct::Matf& y, int batch, bool aug = false, bool train = true);
 
 	ct::Matf get_image(const std::string& name, const Aug &aug = Aug());
 
@@ -99,7 +99,7 @@ public:
 	Batch &front();
 	void pop_front();
 	bool is_batch_exist() const;
-	void set_params_batch(int batch, bool flip, bool aug);
+	void set_params_batch(int batch, bool aug);
 	int batches() const;
 
 	void start();
@@ -113,7 +113,6 @@ private:
 	std::list<Batch> m_batches;
 	std::thread *m_thread;
 	int m_batch;
-	bool m_flip;
 	bool m_aug;
 	bool m_done;
 	std::mutex m_mutex;

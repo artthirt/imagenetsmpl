@@ -45,12 +45,13 @@ void ImNetSmpl::init()
 
 	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), ct::LEAKYRELU, false, true, false);
 	m_conv[1].init(m_conv[0].szOut(), 64, 2, 64, ct::Size(5, 5), ct::LEAKYRELU, false, true, true);
-	m_conv[2].init(m_conv[1].szOut(), 64, 2, 128, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
-	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), ct::LEAKYRELU, true, true, true);
+	m_conv[2].init(m_conv[1].szOut(), 64, 1, 128, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
+	m_conv[3].init(m_conv[2].szOut(), 128, 2, 256, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
 	m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
-	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
+	m_conv[5].init(m_conv[4].szOut(), 512, 2, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
 	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(1, 1), ct::LEAKYRELU, false, true, true);
-	m_conv[7].init(m_conv[6].szOut(), 1024, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true, true);
+	m_conv[7].init(m_conv[6].szOut(), 1024, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
+	m_conv[8].init(m_conv[7].szOut(), 512, 1, 128, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -59,8 +60,8 @@ void ImNetSmpl::init()
 	m_mlp.resize(mlp_size);
 
 	m_mlp[0].init(outFeatures,	4096,		ct::LEAKYRELU);
-	m_mlp[1].init(4096,			4096,		ct::LEAKYRELU);
-	m_mlp[2].init(4096,			m_classes,	ct::SOFTMAX);
+//	m_mlp[1].init(4096,			4096,		ct::LEAKYRELU);
+	m_mlp[1].init(4096,			m_classes,	ct::SOFTMAX);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
@@ -83,7 +84,7 @@ void ImNetSmpl::doPass(int passes, int batch)
 	if(!m_init)
 		init();
 
-	m_reader->set_params_batch(batch, true, true);
+	m_reader->set_params_batch(batch, true);
 	m_reader->start();
 
 	for(int pass = 0; pass < passes; ++pass){
@@ -117,7 +118,7 @@ void ImNetSmpl::doPass(int passes, int batch)
 			int idx = 0;
 			double ls = 0, pr = 0;
 			for(int i = 0; i < m_check_count; i += batch, idx++){
-				m_reader->get_batch(X, y, batch);
+				m_reader->get_batch(X, y, batch, false, false);
 
 //				gpumat::save_gmat(gy, "tmp1.txt");
 //				ct::save_mat(y, "tmp2.txt");

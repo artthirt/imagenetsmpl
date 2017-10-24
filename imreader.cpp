@@ -75,7 +75,6 @@ cv::Mat GetSquareImage( const cv::Mat& img, int target_width = 500 )
 ImReader::ImReader(int seed)
 {
 	m_batch = 10;
-	m_flip = true;
 	m_aug = true;
 	m_thread = 0;
 	m_done = false;
@@ -91,7 +90,6 @@ ImReader::ImReader(int seed)
 ImReader::ImReader(const QString& pathToImages, int seed)
 {
 	m_batch = 10;
-	m_flip = true;
 	m_aug = true;
 	m_thread = 0;
 	m_done = false;
@@ -148,7 +146,7 @@ void ImReader::init()
 	qDebug() << "DIRS" << m_dirs.size();
 }
 
-void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool flip, bool aug)
+void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool aug, bool train)
 {
 	if(m_files.empty())
 		return;
@@ -163,23 +161,13 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 //	std::stringstream ss, ss2;
 
 	std::binomial_distribution<int> bn(1, 0.5);
-	std::uniform_int_distribution<int> ui(0, m_files.size() - 1);
 	std::normal_distribution<float> nl(1, 0.1);
 
-	std::vector < bool > bflip;
-	bflip.resize(batch);
-
-	if(flip){
-		for(uint i = 0; i < bflip.size(); ++i){
-			bflip[i] = bn(_rnd);
-		}
-	}else{
-		std::fill(bflip.begin(), bflip.end(), false);
-	}
+	std::uniform_int_distribution<int> ui(0, m_files.size() - 1);
 
 	uint off = 0;
 
-	{
+	if(train){
 		if(m_saved.size() && aug){
 			int cnt = std::min(batch/3, FOR_REPEAT_BATCH);
 			if(!cnt) cnt = std::max(1, batch/2);
@@ -197,7 +185,12 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 		int len = m_files[id1].size();
 
-		std::uniform_int_distribution<int> un(0, len - 1);
+		std::uniform_int_distribution<int> un(0, 0.8 * len);
+
+		if(!train){
+			un = std::uniform_int_distribution<int>(0.8 * len + 1, len - 1);
+		}
+
 		int id2 = un(_rnd);
 
 		Aug _aug;
@@ -398,10 +391,9 @@ bool ImReader::is_batch_exist() const
 	return !m_batches.empty();
 }
 
-void ImReader::set_params_batch(int batch, bool flip, bool aug)
+void ImReader::set_params_batch(int batch, bool aug)
 {
 	m_batch = batch;
-	m_flip = flip;
 	m_aug = aug;
 }
 
@@ -427,7 +419,7 @@ void ImReader::run()
 		ct::Matf y;
 
 		if(m_batches.size() < MAX_BATCHES){
-			get_batch(X, y, m_batch, m_flip, m_aug);
+			get_batch(X, y, m_batch, m_aug, true);
 			m_mutex.lock();
 			m_batches.push_back(Batch(X, y));
 			m_mutex.unlock();

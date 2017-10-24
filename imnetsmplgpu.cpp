@@ -181,7 +181,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 	std::vector< gpumat::GpuMat > gX;
 	gpumat::GpuMat gy, *gy_, gD;
 
-	m_reader->set_params_batch(batch, true, true);
+	m_reader->set_params_batch(batch, true);
 	m_reader->start();
 
 	for(int i = 0; i < pass; ++i){
@@ -228,7 +228,7 @@ void ImNetSmplGpu::doPass(int pass, int batch)
 			int idx = 0;
 			double ls = 0, pr = 0, pr2 = 0;
 			for(int i = 0; i <= m_check_count; i += batch, idx++){
-				m_reader->get_batch(X, y, batch);
+				m_reader->get_batch(X, y, batch, false, false);
 
 				get_gX(X, gX);
 				gpumat::convert_to_gpu(y, gy);
