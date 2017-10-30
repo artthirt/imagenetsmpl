@@ -289,9 +289,9 @@ ct::Matf ImReader::get_image(const std::string &name, const Aug &aug)
 		}
 	}
 
-//	if(aug && off.x != 0 && off.y != 0){
-//		offsetImage(m, cv::Scalar(0), off.x, off.y);
-//	}
+	if(aug.augmentation && (aug.xoff != 0 || aug.yoff != 0)){
+		offsetImage(m, cv::Scalar(0), aug.xoff, aug.yoff);
+	}
 	if(aug.inv){
 		cv::bitwise_not(m, m);
 	}else{
@@ -460,12 +460,12 @@ void Aug::gen(std::mt19937 &gn)
 	xoff = noff(gn);
 	yoff = noff(gn);
 	std::uniform_real_distribution<float> nrgb(-0.1, 0.1);
-	contrast = nrgb(gn);
+	contrast = 0.1 * nrgb(gn);
 	kr = 0.95 + nrgb(gn);
 	kg = 0.95 + nrgb(gn);
 	kb = 0.95 + nrgb(gn);
-    zoomx = 1 + 2. * nrgb(gn);
-    zoomy = 1 + 2. * nrgb(gn);
+	zoomx = 0.95 + 1. * nrgb(gn);
+	zoomy = 0.95 + 1. * nrgb(gn);
 	std::binomial_distribution<int> bd(1, 0.5);
 	//vflip = bd(gn);
 	hflip = bd(gn);
