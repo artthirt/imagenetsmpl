@@ -456,11 +456,11 @@ Aug::Aug()
 void Aug::gen(std::mt19937 &gn)
 {
 	augmentation = true;
-	std::uniform_real_distribution<float> noff(-ImReader::IM_WIDTH * 0.03, ImReader::IM_HEIGHT * 0.03);
+	std::uniform_real_distribution<float> noff(-ImReader::IM_WIDTH * 0.1, ImReader::IM_HEIGHT * 0.1);
 	xoff = noff(gn);
 	yoff = noff(gn);
 	std::uniform_real_distribution<float> nrgb(-0.1, 0.1);
-	contrast = 0.1 * nrgb(gn);
+	contrast = nrgb(gn);
 	kr = 0.95 + nrgb(gn);
 	kg = 0.95 + nrgb(gn);
 	kb = 0.95 + nrgb(gn);
