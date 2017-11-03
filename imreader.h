@@ -25,6 +25,7 @@ struct Aug{
 	float contrast;
 	float zoomx;
 	float zoomy;
+	float angle;
 	bool inv;
 	bool gray;
 

@@ -216,12 +216,12 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 //	std::cout << "indexes: " << ss2.str() << std::endl;
 }
 
-void offsetImage(cv::Mat &image, cv::Scalar bordercolour, int xoffset, int yoffset)
+void offsetImage(cv::Mat &image, cv::Scalar bordercolour, int xoffset, int yoffset, float angle)
 {
 	using namespace cv;
 	float mdata[] = {
-		1, 0, xoffset,
-		0, 1, yoffset
+		cos(angle), sin(angle), xoffset,
+		-sin(angle), cos(angle), yoffset
 	};
 
 	Mat M(2, 3, CV_32F, mdata);
@@ -290,7 +290,7 @@ ct::Matf ImReader::get_image(const std::string &name, const Aug &aug)
 	}
 
 	if(aug.augmentation && (aug.xoff != 0 || aug.yoff != 0)){
-		offsetImage(m, cv::Scalar(0), aug.xoff, aug.yoff);
+		offsetImage(m, cv::Scalar(0), aug.xoff, aug.yoff, aug.angle);
 	}
 	if(aug.inv){
 		cv::bitwise_not(m, m);
@@ -330,10 +330,11 @@ ct::Matf ImReader::get_image(const std::string &name, const Aug &aug)
 
 	res.clipRange(0, 1);
 
-//	cv::Mat out;
-//	getMat(res, &out, ct::Size(IM_WIDTH, IM_HEIGHT));
-//	cv::imwrite("tmp.jpg", out);
-
+#ifdef _DEBUG
+	cv::Mat out;
+	getMat(res, &out, ct::Size(IM_WIDTH, IM_HEIGHT));
+	cv::imwrite("tmp.jpg", out);
+#endif
 	return res;
 }
 
@@ -441,6 +442,10 @@ void ImReader::push_to_saved(const ct::Matf &X, float id)
 
 ///////////////////////////
 
+inline float a2r(float angle){
+	return angle * CV_PI / 180.;
+}
+
 Aug::Aug()
 {
 	augmentation = false;
@@ -449,23 +454,25 @@ Aug::Aug()
 	kr = kb = kg = 1.;
 	zoomx = 1;
 	zoomy = 1;
+	angle = 0;
 	inv = false;
 	gray = false;
 }
 
 void Aug::gen(std::mt19937 &gn)
 {
+	std::uniform_real_distribution<float> distr(-1., 1.);
+
 	augmentation = true;
-	std::uniform_real_distribution<float> noff(-ImReader::IM_WIDTH * 0.1, ImReader::IM_HEIGHT * 0.1);
-	xoff = noff(gn);
-	yoff = noff(gn);
-	std::uniform_real_distribution<float> nrgb(-0.1, 0.1);
-	contrast = nrgb(gn);
-	kr = 0.95 + nrgb(gn);
-	kg = 0.95 + nrgb(gn);
-	kb = 0.95 + nrgb(gn);
-	zoomx = 0.95 + 1. * nrgb(gn);
-	zoomy = 0.95 + 1. * nrgb(gn);
+	xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
+	yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
+	contrast = 0.1 * distr(gn);
+	kr = 0.95 + 0.1 * distr(gn);
+	kg = 0.95 + 0.1 * distr(gn);
+	kb = 0.95 + 0.1 * distr(gn);
+	zoomx = 0.95 + 0.15 * distr(gn);
+	zoomy = 0.95 + 0.15 * distr(gn);
+	angle = a2r(10. * distr(gn));
 	std::binomial_distribution<int> bd(1, 0.5);
 	//vflip = bd(gn);
 	hflip = bd(gn);
