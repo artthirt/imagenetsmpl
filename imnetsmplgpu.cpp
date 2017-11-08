@@ -5,7 +5,7 @@
 #include <QDir>
 #include <QFile>
 
-const int cnv_size = 8;
+const int cnv_size = 9;
 const int mlp_size = 3;
 
 //const int stop_cnv_layer = 6;
@@ -119,14 +119,15 @@ void ImNetSmplGpu::init()
 
 	m_conv.resize(cnv_size);
 
-	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(7, 7), gpumat::LEAKYRELU, false, true, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 2, 128, ct::Size(5, 5), gpumat::LEAKYRELU, false, true, true);
-	m_conv[2].init(m_conv[1].szOut(), 128, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-	m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
-	m_conv[4].init(m_conv[3].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-	m_conv[5].init(m_conv[4].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-	m_conv[7].init(m_conv[6].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
+	m_conv[0].init(ct::Size(W, H), 3, 3, 32, ct::Size(5, 5), gpumat::LEAKYRELU, false, true, false);
+	m_conv[1].init(m_conv[0].szOut(), 32, 1, 64, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
+	m_conv[2].init(m_conv[1].szOut(), 64, 2, 64, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+	m_conv[3].init(m_conv[2].szOut(), 64, 1, 128, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
+	m_conv[4].init(m_conv[3].szOut(), 128, 2, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+	m_conv[5].init(m_conv[4].szOut(), 128, 1, 256, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
+	m_conv[6].init(m_conv[5].szOut(), 256, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+	m_conv[7].init(m_conv[6].szOut(), 256, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
+	m_conv[8].init(m_conv[7].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -150,11 +151,11 @@ void ImNetSmplGpu::init()
 //	m_cnv_optim.setDelimiterIteration(16);
 
 	for(int i = 0; i < m_conv.size(); ++i){
-		m_conv[i].setDropout(0.8);
+		m_conv[i].setDropout(0.5);
 	}
 
-	m_mlp[0].setDropout(0.6);
-	m_mlp[1].setDropout(0.9);
+	m_mlp[0].setDropout(0.5);
+	m_mlp[1].setDropout(0.5);
 //	m_mlp[2].setDropout(0.98);
 
 	m_init = true;
@@ -259,7 +260,8 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 //	for(int i = 0; i < m_conv.size(); ++i){
 //		m_conv[i].setDropout(dropout);
 //	}
-//	m_conv.back().setDropout(dropout);
+//	m_conv[cnv_size - 2].setDropout(dropout);
+//	m_conv[cnv_size - 1].setDropout(dropout);
 
 //	set_train(dropout);
 
