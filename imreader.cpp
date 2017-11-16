@@ -185,10 +185,10 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 		int len = m_files[id1].size();
 
-		std::uniform_int_distribution<int> un(0, 0.85 * len);
+		std::uniform_int_distribution<int> un(0, (float)(0.85 * len));
 
 		if(!train){
-			un = std::uniform_int_distribution<int>(0.85 * len + 1, len - 1);
+			un = std::uniform_int_distribution<int>((float)(0.85 * len) + 1, len - 1);
 		}
 
 		int id2 = un(_rnd);
@@ -464,15 +464,15 @@ void Aug::gen(std::mt19937 &gn)
 	std::uniform_real_distribution<float> distr(-1., 1.);
 
 	augmentation = true;
-//	xoff = (float)ImReader::IM_WIDTH * 0.05 * distr(gn);
-//	yoff = (float)ImReader::IM_HEIGHT * 0.05 * distr(gn);
+	xoff = (float)ImReader::IM_WIDTH * 0.05 * distr(gn);
+	yoff = (float)ImReader::IM_HEIGHT * 0.05 * distr(gn);
 	contrast = 0.05 * distr(gn);
 	kr = 1. + 0.05 * distr(gn);
 	kg = 1. + 0.05 * distr(gn);
 	kb = 1. + 0.05 * distr(gn);
 	zoomx = 0.95 + 0.1 * distr(gn);
 	zoomy = 0.95 + 0.1 * distr(gn);
-	//angle = a2r(5. * distr(gn));
+	angle = a2r(5. * distr(gn));
 	std::binomial_distribution<int> bd(1, 0.5);
 	//vflip = bd(gn);
 	hflip = bd(gn);
