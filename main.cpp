@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 		seed = std::stoi(res["seed"]);
 	}
 
-	ImReader ir(QString(res["imnet"].c_str()), seed);
+	ImReader ir(QString(res["imnet"].c_str()));
 	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
 
 
@@ -258,6 +258,8 @@ int main(int argc, char *argv[])
 	printf("train_layer_from %d\n", train_layer_from);
 
 	//printf("Parameters startup: pass=%d, batch=%d, lr=%f\n", pass, batch, lr);
+
+	ir.setSeed(seed);
 
 	if(contain(res, "gpu")){
 		ImNetSmplGpu imnetSmpl;

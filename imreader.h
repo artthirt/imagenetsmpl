@@ -83,8 +83,8 @@ public:
 		IM_WIDTH=224, IM_HEIGHT=224
 	};
 
-	ImReader(int seed = 11);
-	ImReader(const QString &pathToImages, int seed = 11);
+	ImReader();
+	ImReader(const QString &pathToImages);
 	~ImReader();
 
 	void init();
@@ -105,6 +105,8 @@ public:
 
 	void start();
 	void run();
+
+	void setSeed(int seed);
 
 	void push_to_saved(const ct::Matf& X, float id);
 

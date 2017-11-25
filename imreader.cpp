@@ -72,34 +72,21 @@ cv::Mat GetSquareImage( const cv::Mat& img, int target_width = 500 )
 
 //const QString ImNetPath("../../../data/imagenet/");
 
-ImReader::ImReader(int seed)
+ImReader::ImReader()
 {
 	m_batch = 10;
 	m_aug = true;
 	m_thread = 0;
 	m_done = false;
-
-#ifndef CV_MAJOR_VERSION == 3 && CV_MINOR_VERSION == 1
-	cv::setRNGSeed(seed);
-#else
-	cv::theRNG().state = seed;
-#endif
-	_rnd.seed(seed);
 }
 
-ImReader::ImReader(const QString& pathToImages, int seed)
+ImReader::ImReader(const QString& pathToImages)
 {
 	m_batch = 10;
 	m_aug = true;
 	m_thread = 0;
 	m_done = false;
 
-#ifndef CV_MAJOR_VERSION == 3 && CV_MINOR_VERSION == 1
-	cv::setRNGSeed(seed);
-#else
-	cv::theRNG().state = seed;
-#endif
-	_rnd.seed(seed);
 	m_image_path = pathToImages;
 	init();
 }
@@ -430,6 +417,18 @@ void ImReader::run()
 	}
 }
 
+void ImReader::setSeed(int seed)
+{
+#ifndef CV_MAJOR_VERSION == 3 && CV_MINOR_VERSION == 1
+	cv::setRNGSeed(seed);
+#else
+	cv::theRNG().state = seed;
+#endif
+	_rnd.seed(seed);
+
+	m_gt.seed(seed);
+}
+
 void ImReader::push_to_saved(const ct::Matf &X, float id)
 {
 	if(m_saved.size() > MAX_SAVED){
@@ -464,8 +463,8 @@ void Aug::gen(std::mt19937 &gn)
 	std::uniform_real_distribution<float> distr(-1., 1.);
 
 	augmentation = true;
-	xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
-	yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
+//	xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
+//	yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
 	contrast = 0.05 * distr(gn);
 	kr = 1. + 0.1 * distr(gn);
 	kg = 1. + 0.1 * distr(gn);
