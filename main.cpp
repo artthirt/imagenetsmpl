@@ -56,6 +56,12 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 		if(str == "-train_layer_from" && i < argc){
 			res["train_layer_from"] = argv[i + 1];
 		}
+		if(str == "-validation_groundtruth" && i < argc){
+			res["validation_groundtruth"] = argv[i + 1];
+		}
+		if(str == "-validation_set" && i < argc){
+			res["validation_set"] = argv[i + 1];
+		}
 	}
 	return res;
 }
@@ -212,7 +218,7 @@ int main(int argc, char *argv[])
 	//QCoreApplication a(argc, argv);
 
 	int seed = 1;
-	if(contain(res, "seed")){
+	if(contain(res, std::string("seed"))){
 		seed = std::stoi(res["seed"]);
 	}
 
@@ -249,6 +255,17 @@ int main(int argc, char *argv[])
 	if(contain(res, "train_layer_from")){
 		train_layer_from = std::stoi(res["train_layer_from"]);
 	}
+
+	std::string val_folder, val_gt;
+	if(contain(res, "validation_set")){
+		val_folder = res["validation_set"];
+	}
+
+	if(contain(res, "validation_groundtruth")){
+		val_gt = res["validation_groundtruth"];
+	}
+
+	ir.setValidation(val_folder, val_gt);
 
 	printf("pass %d\n", pass);
 	printf("batch %d\n", batch);

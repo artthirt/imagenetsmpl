@@ -168,34 +168,54 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 //#pragma omp parallel for
 	for(uint i = off; i < batch; ++i){
-		int id1 = ui(_rnd);//shuffle[i];
+//		int train_edge = TRAIN_EDGE;
 
-		int len = m_files[id1].size();
+//		if(len < TRAIN_EDGE){
+//			if(len < TRAIN_EDGE2)
+//				train_edge = len * 0.8;
+//			else
+//				train_edge = TRAIN_EDGE2;
+//		}
 
-		std::uniform_int_distribution<int> un(0, (float)(0.85 * len));
+//		std::uniform_int_distribution<int> un(0, train_edge);
 
-		if(!train){
-			un = std::uniform_int_distribution<int>((float)(0.85 * len) + 1, len - 1);
-		}
+//		if(!train){
+//			un = std::uniform_int_distribution<int>(train_edge + 1, len - 1);
+//		}
 
-		int id2 = un(_rnd);
+		if(train || m_val_files.empty()){
+			int id1 = ui(_rnd);//shuffle[i];
 
-		Aug _aug;
-		if(aug)
-			_aug.gen(m_gt);
+			int len = m_files[id1].size();
+
+			std::uniform_int_distribution<int> un(0, len - 1);
+
+			int id2 = un(_rnd);
+
+			Aug _aug;
+			if(aug)
+				_aug.gen(m_gt);
 
 
-		ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], _aug);
-		if(!Xi.empty()){
+			ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], _aug);
 			X[i] = Xi;
 			std::string n = m_dirs[id1];
 			int idy = imnet::getNumberOfList(n);
-			if(idy >= 0)
-				y.ptr()[i] = idy;
-			else
-				printf("Oops. index not found for '%s'", n.c_str());
+			y.ptr()[i] = idy;
 		}else{
-			X[i] = ct::Matf::zeros(1, IM_HEIGHT * IM_WIDTH * 3);
+//			std::cout << "val" << std::endl << std::flush;
+			std::uniform_int_distribution<int> un(0, m_val_files.size() - 1);
+
+			int id1 = un(_rnd);
+			Aug _aug;
+			ct::Matf Xi = get_image(m_val_files[id1], _aug);
+
+//			cv::Mat m;
+//			getMat(Xi, &m, ct::Size(IM_WIDTH, IM_HEIGHT));
+//			cv::imwrite("tmp" + std::to_string(i) + ".jpg", m);
+
+			X[i] = Xi;
+			y.ptr()[i] = m_val_gt[id1];
 		}
 	}
 //	std::cout << std::endl;
@@ -357,6 +377,92 @@ void ImReader::setImagePath(const QString &path)
 	m_image_path = path;
 }
 
+void ImReader::setValidation(const std::string &folder, const std::string groundtruth_file)
+{
+	QDir dir;
+	if(!dir.exists(QString::fromStdString(folder))
+			|| !QFile::exists(QString::fromStdString(groundtruth_file))){
+		printf("validation folder or validation groundtruth not set\n");
+		return;
+	}
+
+	m_val_gt_file = groundtruth_file;
+
+	QFile file(QString::fromStdString(m_val_gt_file));
+	if(!file.open(QIODevice::ReadOnly)){
+		printf("groundtruth file not open\n");
+		return;
+	}
+
+	QTextStream tstream(&file);
+
+	std::map< QString, int > values;
+
+	while(!tstream.atEnd()){
+		QString sid;
+		sid = tstream.readLine();
+		QStringList sl = sid.split(' ');
+		values[sl[0]] = sl[1].toInt();
+//		m_val_gt.push_back(sl[1].toInt());
+	}
+	file.close();
+
+	m_val_gt.clear();
+	m_val_files.clear();
+
+//	int index = 0;
+	dir.setPath(QString::fromStdString(folder));
+	printf("folder %s %d\n", folder.c_str(), dir.count());
+	for(int i = 0; i < dir.count(); ++i){
+		QFileInfo fi(dir.path() + "/" + dir[i]);
+		if(fi.isDir() || dir[i] == "." || dir[i] == "..")
+			continue;
+//		printf("VAL FILE %d: %s\n", index++, dir[i].toStdString().c_str());
+		m_val_files.push_back(QString(dir.path() + "/" + dir[i]).toStdString());
+		m_val_gt.push_back(values[dir[i]]);
+	}
+
+	std::cout << "validation loaded\n" << std::flush;
+
+	if(m_val_files.size() != m_val_gt.size()){
+		m_val_files.clear();
+		m_val_gt.clear();
+		printf("count of files and groundtruth  not equal\n");
+	}
+
+	if(!m_dirs.empty()){
+		std::vector< std::string > new_files;
+		std::vector< int > new_id;
+		std::map< int, bool > cat_ids;
+		std::map<int, int> cat_files;
+
+		for(std::string n: m_dirs){
+			//std::string n = m_dirs[id1];
+			int idy = imnet::getNumberOfList(n);
+			cat_ids[idy] = true;
+		}
+		for(int i = 0; i < m_val_files.size(); ++i){
+			if(contain(cat_ids, m_val_gt[i])){
+				new_files.push_back(m_val_files[i]);
+				new_id.push_back(m_val_gt[i]);
+				if(contain(cat_files, m_val_gt[i])){
+					cat_files[m_val_gt[i]]++;
+				}else{
+					cat_files[m_val_gt[i]] = 0;
+				}
+			}
+		}
+		m_val_files = new_files;
+		m_val_gt = new_id;
+
+//		for(auto& kv: cat_files){
+//			std::cout << kv.first << ": " << kv.second << std::endl;
+//		}
+
+		printf("real validation files %d\n", m_val_gt.size());
+	}
+}
+
 Batch &ImReader::front()
 {
 	m_mutex.lock();
@@ -463,12 +569,12 @@ void Aug::gen(std::mt19937 &gn)
 	std::uniform_real_distribution<float> distr(-1., 1.);
 
 	augmentation = true;
-//	xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
-//	yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
-	contrast = 0.05 * distr(gn);
-	kr = 1. + 0.1 * distr(gn);
-	kg = 1. + 0.1 * distr(gn);
-	kb = 1. + 0.1 * distr(gn);
+//	xoff = (float)ImReader::IM_WIDTH * 0.01 * distr(gn);
+//	yoff = (float)ImReader::IM_HEIGHT * 0.01 * distr(gn);
+	contrast = 0.03 * distr(gn);
+	kr = 0.98 + 0.05 * distr(gn);
+	kg = 0.98 + 0.05 * distr(gn);
+	kb = 0.98 + 0.05 * distr(gn);
 	zoomx = 0.95 + 0.1 * distr(gn);
 	zoomy = 0.95 + 0.1 * distr(gn);
 	//angle = a2r(5. * distr(gn));

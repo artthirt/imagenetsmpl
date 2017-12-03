@@ -8,6 +8,7 @@
 #include <thread>
 #include <list>
 #include <mutex>
+#include <map>
 
 #define MAX_SAVED			50
 #define FOR_REPEAT_BATCH	20
@@ -80,7 +81,7 @@ class ImReader
 {
 public:
 	enum {
-		IM_WIDTH=224, IM_HEIGHT=224
+		IM_WIDTH=224, IM_HEIGHT=224, TRAIN_EDGE = 1100, TRAIN_EDGE2 = 900
 	};
 
 	ImReader();
@@ -96,6 +97,8 @@ public:
 	void getMat(const ct::Matf &in, cv::Mat *out, const ct::Size sz);
 
 	void setImagePath(const QString& path);
+
+	void setValidation(const std::string &folder, const std::string groundtruth_file);
 
 	Batch &front();
 	void pop_front();
@@ -125,7 +128,17 @@ private:
 	int m_all_count;
 	QString m_image_path;
 
+	std::vector< std::string > m_val_files;
+	std::string m_val_gt_file;
+	std::vector< int > m_val_gt;
+
 	std::list< Saved > m_saved;
 };
+
+template< typename T1, typename T2>
+bool contain(const std::map<T1, T2>& mp, const T1& key)
+{
+	return mp.find(key) != mp.end();
+}
 
 #endif // IMREADER_H
