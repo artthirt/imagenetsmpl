@@ -403,9 +403,12 @@ void ImReader::setValidation(const std::string &folder, const std::string ground
 		sid = tstream.readLine();
 		QStringList sl = sid.split(' ');
 		values[sl[0]] = sl[1].toInt();
+		std::cout << "ground truth: progress " << (double)file.pos() / file.size() * 100. << "           \r" << std::flush;
 //		m_val_gt.push_back(sl[1].toInt());
 	}
 	file.close();
+
+	std::cout << "\n";
 
 	m_val_gt.clear();
 	m_val_files.clear();
@@ -420,6 +423,7 @@ void ImReader::setValidation(const std::string &folder, const std::string ground
 //		printf("VAL FILE %d: %s\n", index++, dir[i].toStdString().c_str());
 		m_val_files.push_back(QString(dir.path() + "/" + dir[i]).toStdString());
 		m_val_gt.push_back(values[dir[i]]);
+		std::cout << "files: progress " << (double)i / dir.count() * 100. << "           \r" << std::flush;
 	}
 
 	std::cout << "validation loaded\n" << std::flush;
@@ -434,7 +438,7 @@ void ImReader::setValidation(const std::string &folder, const std::string ground
 		std::vector< std::string > new_files;
 		std::vector< int > new_id;
 		std::map< int, bool > cat_ids;
-		std::map<int, int> cat_files;
+//		std::map<int, int> cat_files;
 
 		for(std::string n: m_dirs){
 			//std::string n = m_dirs[id1];
@@ -445,11 +449,11 @@ void ImReader::setValidation(const std::string &folder, const std::string ground
 			if(contain(cat_ids, m_val_gt[i])){
 				new_files.push_back(m_val_files[i]);
 				new_id.push_back(m_val_gt[i]);
-				if(contain(cat_files, m_val_gt[i])){
-					cat_files[m_val_gt[i]]++;
-				}else{
-					cat_files[m_val_gt[i]] = 0;
-				}
+//				if(contain(cat_files, m_val_gt[i])){
+//					cat_files[m_val_gt[i]]++;
+//				}else{
+//					cat_files[m_val_gt[i]] = 0;
+//				}
 			}
 		}
 		m_val_files = new_files;
@@ -569,9 +573,9 @@ void Aug::gen(std::mt19937 &gn)
 	std::uniform_real_distribution<float> distr(-1., 1.);
 
 	augmentation = true;
-//	xoff = (float)ImReader::IM_WIDTH * 0.01 * distr(gn);
-//	yoff = (float)ImReader::IM_HEIGHT * 0.01 * distr(gn);
-//	contrast = 0.03 * distr(gn);
+	xoff = (float)ImReader::IM_WIDTH * 0.01 * distr(gn);
+	yoff = (float)ImReader::IM_HEIGHT * 0.01 * distr(gn);
+	contrast = 0.03 * distr(gn);
 	kr = 0.98 + 0.05 * distr(gn); kb = kg = kr;
 //	kg = 0.98 + 0.05 * distr(gn);
 //	kb = 0.98 + 0.05 * distr(gn);
