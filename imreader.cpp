@@ -197,7 +197,18 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 				_aug.gen(m_gt);
 
 
-			ct::Matf Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], _aug);
+			ct::Matf Xi;
+
+			while(true){
+				try{
+					Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], _aug);
+					break;
+				}catch(...){
+					std::cout << "Error on get image. Next...\n";
+					if(aug)
+						_aug.gen(m_gt);
+				}
+			}
 			X[i] = Xi;
 			std::string n = m_dirs[id1];
 			int idy = imnet::getNumberOfList(n);
@@ -573,15 +584,15 @@ void Aug::gen(std::mt19937 &gn)
 	std::uniform_real_distribution<float> distr(-1., 1.);
 
 	augmentation = true;
-	xoff = (float)ImReader::IM_WIDTH * 0.01 * distr(gn);
-	yoff = (float)ImReader::IM_HEIGHT * 0.01 * distr(gn);
-	contrast = 0.03 * distr(gn);
-	kr = 0.98 + 0.05 * distr(gn); kb = kg = kr;
-//	kg = 0.98 + 0.05 * distr(gn);
-//	kb = 0.98 + 0.05 * distr(gn);
+	xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
+	yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
+	contrast = 0.05 * distr(gn);
+	kr = 0.98 + 0.1 * distr(gn);
+	kg = 0.98 + 0.1 * distr(gn);
+	kb = 0.98 + 0.1 * distr(gn);
 	zoomx = 0.95 + 0.1 * distr(gn);
 	zoomy = 0.95 + 0.1 * distr(gn);
-	angle = a2r(5. * distr(gn));
+	angle = a2r(10. * distr(gn));
 	std::binomial_distribution<int> bd(1, 0.5);
 	//vflip = bd(gn);
 	hflip = bd(gn);
