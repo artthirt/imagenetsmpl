@@ -584,14 +584,14 @@ void Aug::gen(std::mt19937 &gn)
 	std::uniform_real_distribution<float> distr(-1., 1.);
 
 	augmentation = true;
-	//xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
-	//yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
-	contrast = 0.05 * distr(gn);
-	kr = 0.98 + 0.1 * distr(gn); //kg = kb = kr;
-	kg = 0.98 + 0.1 * distr(gn);
-	kb = 0.98 + 0.1 * distr(gn);
-	zoomx = 0.98 + 0.05 * distr(gn);
-	zoomy = 0.98 + 0.05 * distr(gn);
+	xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
+	yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
+    contrast = 0.05 * distr(gn);
+    kr = 0.98 + 0.05 * distr(gn); kg = kb = kr;
+//	kg = 0.98 + 0.05 * distr(gn);
+//	kb = 0.98 + 0.05 * distr(gn);
+    zoomx = 0.98 + 0.1 * distr(gn);
+    zoomy = 0.98 + 0.1 * distr(gn);
 	angle = a2r(5. * distr(gn));
 	std::binomial_distribution<int> bd(1, 0.5);
 	//vflip = bd(gn);

@@ -119,16 +119,16 @@ void ImNetSmplGpu::init()
 
 	m_conv.resize(cnv_size);
 
-	m_conv[0].init(ct::Size(W, H), 3, 4, 96, ct::Size(7, 7), gpumat::LEAKYRELU, false, true, false);
-	m_conv[1].init(m_conv[0].szOut(), 96, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
-	m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-	m_conv[3].init(m_conv[2].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true);
-	m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
-	m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
-//	m_conv[8].init(m_conv[7].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//	m_conv[9].init(m_conv[8].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//	m_conv[10].init(m_conv[9].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[0].init(ct::Size(W, H), 3, 4, 128, ct::Size(7, 7), gpumat::LEAKYRELU, false, true, false);
+    m_conv[1].init(m_conv[0].szOut(), 128, 2, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[2].init(m_conv[1].szOut(), 128, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[3].init(m_conv[2].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[6].init(m_conv[5].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+//    m_conv[7].init(m_conv[6].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+//    m_conv[8].init(m_conv[7].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+//    m_conv[9].init(m_conv[8].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -137,8 +137,8 @@ void ImNetSmplGpu::init()
 	m_mlp.resize(mlp_size);
 
 	m_mlp[0].init(outFeatures,	4096,		gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
-	m_mlp[1].init(4096,			4096,		gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
-	m_mlp[2].init(4096,			m_classes,	gpumat::GPU_FLOAT, gpumat::SOFTMAX);
+    m_mlp[1].init(4096,			4096,		gpumat::GPU_FLOAT, gpumat::LEAKYRELU);
+    m_mlp[2].init(4096,			m_classes,	gpumat::GPU_FLOAT, gpumat::SOFTMAX);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
@@ -155,8 +155,8 @@ void ImNetSmplGpu::init()
 		m_conv[i].setDropout(0.7);
 	}
 
-	m_mlp[0].setDropout(0.9);
-	m_mlp[1].setDropout(1.);
+    m_mlp[0].setDropout(.7);
+    m_mlp[1].setDropout(.7);
 	m_mlp[2].setDropout(1.);
 
 	m_init = true;
@@ -267,7 +267,7 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, gpumat::GpuMat 
 //	set_train(dropout);
 
 	m_mlp[0].setDropout(dropout);
-	//m_mlp[1].setDropout(dropout);
+	m_mlp[1].setDropout(dropout);
 	//m_mlp[2].setDropout(dropout);
 
 	m_conv[0].forward(&X);
