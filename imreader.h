@@ -10,8 +10,8 @@
 #include <mutex>
 #include <map>
 
-#define MAX_SAVED			50
-#define FOR_REPEAT_BATCH	20
+#define MAX_SAVED			100
+#define FOR_REPEAT_BATCH	100
 
 struct Aug{
 	Aug();
@@ -76,6 +76,9 @@ struct Saved{
  * @return
  */
 double check(const ct::Matf& classes, const ct::Matf& predicted);
+
+void clear_predicted();
+void save_predicted();
 
 class ImReader
 {

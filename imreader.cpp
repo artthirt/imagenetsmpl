@@ -15,19 +15,25 @@
 
 static std::mt19937 _rnd;
 
-///////////////////////
+std::map<int, std::vector< int > > _predicted;
 
+///////////////////////
+/// \brief check
+/// \param classes
+/// \param predicted
+/// \return
+///
 double check(const ct::Matf& classes, const ct::Matf& predicted)
 {
 	if(classes.empty() || classes.rows != predicted.rows || classes.cols != 1 || predicted.cols != 1)
 		return -1.;
 
-	std::stringstream ss;
-
 	int idx = 0;
 	for(int i = 0; i < classes.rows; ++i){
-		ss << predicted.ptr()[i] << ", ";
-		if(classes.ptr()[i] == predicted.ptr()[i])
+        int p = predicted.ptr()[i];
+        int c = classes.ptr()[i];
+        _predicted[c].push_back(p);
+        if(c == p)
 			idx++;
 	}
 	double pred = (double)idx / classes.rows;
@@ -35,6 +41,31 @@ double check(const ct::Matf& classes, const ct::Matf& predicted)
 //	std::cout << "predicted: " << ss.str() << std::endl;
 
 	return pred;
+}
+
+void clear_predicted()
+{
+    _predicted.clear();
+}
+
+void save_predicted()
+{
+    const std::string filename = "predicted.txt";
+
+    std::fstream fs;
+    fs.open(filename, std::ios_base::out);
+
+    for(auto it: _predicted){
+        std::stringstream ss;
+        ss << it.first << ": ";
+        for(auto it2: it.second){
+            ss << it2 << ", ";
+        }
+        ss << std::endl;
+        fs.write(ss.str().c_str(), ss.str().length());
+    }
+
+    fs.close();
 }
 
 cv::Mat GetSquareImage( const cv::Mat& img, int target_width = 500 )
@@ -156,7 +187,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 	if(train){
 		if(m_saved.size() && aug){
-			int cnt = std::min(batch/3, FOR_REPEAT_BATCH);
+            int cnt = std::min(batch/2, FOR_REPEAT_BATCH);
 			if(!cnt) cnt = std::max(1, batch/2);
 			for(int off = 0; off < cnt && !m_saved.empty(); ++off){
 				X[off] = m_saved.front().X;
@@ -584,15 +615,15 @@ void Aug::gen(std::mt19937 &gn)
 	std::uniform_real_distribution<float> distr(-1., 1.);
 
 	augmentation = true;
-//	xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
-//	yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
-    contrast = 0.01 * distr(gn);
-    kr = 0.98 + 0.02 * distr(gn); kg = kb = kr;
-//    kg = 0.98 + 0.2 * distr(gn);
-//    kb = 0.98 + 0.2 * distr(gn);
-    zoomx = 0.98 + 0.02 * distr(gn);
-    zoomy = 0.98 + 0.02 * distr(gn);
-    angle = a2r(3. * distr(gn));
+//    xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
+//    yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
+//    contrast = 0.01 * distr(gn);
+    kr = 0.98 + 0.1 * distr(gn); kg = kb = kr;
+    kg = 0.98 + 0.1 * distr(gn);
+    kb = 0.98 + 0.1 * distr(gn);
+//    zoomx = 0.98 + 0.1 * distr(gn);
+//    zoomy = 0.98 + 0.1 * distr(gn);
+//    angle = a2r(3. * distr(gn));
 	std::binomial_distribution<int> bd(1, 0.5);
 	//vflip = bd(gn);
 	hflip = bd(gn);
