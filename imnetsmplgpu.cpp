@@ -311,7 +311,7 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, std::vector< gp
 
 void ImNetSmplGpu::backward(const std::vector< gpumat::GpuMat > &Delta)
 {
-	if(m_mlp.empty() || m_mlp.back().A1.empty())
+    if(m_mlp.empty() || m_mlp.back().vecA1.empty())
 		return;
 
     std::vector< gpumat::GpuMat > *pX = (std::vector< gpumat::GpuMat >*)&Delta;
@@ -333,7 +333,7 @@ void ImNetSmplGpu::backward(const std::vector< gpumat::GpuMat > &Delta)
 		//m_conv.back().backward(m_deltas);
 
         //std::vector< gpumat::GpuMat > *pD = &m_deltas;
-        int K = m_conv.back().channels;
+        int K = m_conv.back().szOut().width;
 
         for(size_t i = 0; i < pD->size(); ++i){
             (*pD)[i].reshape((K * K), m_conv.back().kernels);
