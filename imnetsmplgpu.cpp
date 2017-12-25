@@ -6,7 +6,7 @@
 #include <QDir>
 #include <QFile>
 
-const int cnv_size = 8;
+const int cnv_size = 9;
 const int mlp_size = 3;
 
 //const int stop_cnv_layer = 6;
@@ -127,7 +127,8 @@ void ImNetSmplGpu::init()
     m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[6].init(m_conv[5].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
-    m_conv[7].init(m_conv[6].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[7].init(m_conv[6].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
+    m_conv[8].init(m_conv[7].szOut(), 512, 1, 768, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 //    m_conv[7].init(m_conv[6].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 //    m_conv[8].init(m_conv[7].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 //    m_conv[9].init(m_conv[8].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
