@@ -187,8 +187,8 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 	if(train){
 		if(m_saved.size() && aug){
-            int cnt = std::min(batch/2, FOR_REPEAT_BATCH);
-			if(!cnt) cnt = std::max(1, batch/2);
+			int cnt = std::min(batch/4, FOR_REPEAT_BATCH);
+			if(!cnt) cnt = std::max(1, batch/4);
 			for(int off = 0; off < cnt && !m_saved.empty(); ++off){
 				X[off] = m_saved.front().X;
 				y.ptr(off)[0] = m_saved.front().id;
@@ -363,7 +363,7 @@ ct::Matf ImReader::get_image(const std::string &name, const Aug &aug)
 
 	res.setSize(m.channels(), m.cols * m.rows);
 
-#pragma omp parallel for
+//#pragma omp parallel for
 	for(int y = 0; y < m.rows; ++y){
 		float *v = m.ptr<float>(y);
 		float* dX1 = res.ptr(0);
