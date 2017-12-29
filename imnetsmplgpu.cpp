@@ -120,7 +120,7 @@ void ImNetSmplGpu::init()
 
 	m_conv.resize(cnv_size);
 
-	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(9, 9), gpumat::LEAKYRELU, false, true, false, true);
+    m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(9, 9), gpumat::LEAKYRELU, false, true, false);
 	m_conv[1].init(m_conv[0].szOut(), 64, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 	m_conv[2].init(m_conv[1].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 	m_conv[3].init(m_conv[2].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
