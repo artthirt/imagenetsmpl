@@ -13,6 +13,8 @@
 #include <random>
 #include <chrono>
 
+#include <experimental/filesystem>
+
 static std::mt19937 _rnd;
 
 std::map<int, std::vector< int > > _predicted;
@@ -419,6 +421,12 @@ void ImReader::setImagePath(const QString &path)
 	m_image_path = path;
 }
 
+std::size_t number_of_files_in_directory(std::experimental::filesystem::path path)
+{
+    using std::experimental::filesystem::directory_iterator;
+    return std::distance(directory_iterator(path), directory_iterator{});
+}
+
 void ImReader::setValidation(const std::string &folder, const std::string groundtruth_file)
 {
 	QDir dir;
@@ -438,13 +446,13 @@ void ImReader::setValidation(const std::string &folder, const std::string ground
 
 	QTextStream tstream(&file);
 
-	std::map< QString, int > values;
+    std::map< std::string, int > values;
 
 	while(!tstream.atEnd()){
 		QString sid;
 		sid = tstream.readLine();
 		QStringList sl = sid.split(' ');
-		values[sl[0]] = sl[1].toInt();
+        values[sl[0].toStdString()] = sl[1].toInt();
 		std::cout << "ground truth: progress " << (double)file.pos() / file.size() * 100. << "           \r" << std::flush;
 //		m_val_gt.push_back(sl[1].toInt());
 	}
@@ -456,17 +464,27 @@ void ImReader::setValidation(const std::string &folder, const std::string ground
 	m_val_files.clear();
 
 //	int index = 0;
-	dir.setPath(QString::fromStdString(folder));
-	printf("folder %s %d\n", folder.c_str(), dir.count());
-	for(int i = 0; i < dir.count(); ++i){
-		QFileInfo fi(dir.path() + "/" + dir[i]);
-		if(fi.isDir() || dir[i] == "." || dir[i] == "..")
-			continue;
-//		printf("VAL FILE %d: %s\n", index++, dir[i].toStdString().c_str());
-		m_val_files.push_back(QString(dir.path() + "/" + dir[i]).toStdString());
-		m_val_gt.push_back(values[dir[i]]);
-		std::cout << "files: progress " << (double)i / dir.count() * 100. << "           \r" << std::flush;
-	}
+//	dir.setPath(QString::fromStdString(folder));
+//	printf("folder %s %d\n", folder.c_str(), dir.count());
+//	for(int i = 0; i < dir.count(); ++i){
+//		QFileInfo fi(dir.path() + "/" + dir[i]);
+//		if(fi.isDir() || dir[i] == "." || dir[i] == "..")
+//			continue;
+////		printf("VAL FILE %d: %s\n", index++, dir[i].toStdString().c_str());
+//		m_val_files.push_back(QString(dir.path() + "/" + dir[i]).toStdString());
+//		m_val_gt.push_back(values[dir[i]]);
+//		std::cout << "files: progress " << (double)i / dir.count() * 100. << "           \r" << std::flush;
+//	}
+
+    int64_t index = 0;
+    int64_t files_count = number_of_files_in_directory(folder);
+    for(const std::experimental::filesystem::directory_entry& it: std::experimental::filesystem::directory_iterator(folder)){
+        if(it == "." || it == "..")
+            continue;
+        m_val_files.push_back(it.path());
+        m_val_gt.push_back(values[it.path().filename()]);
+        std::cout << "files: progress " << (double)index++ / files_count * 100. << "           \r" << std::flush;
+    }
 
 	std::cout << "validation loaded\n" << std::flush;
 
@@ -617,13 +635,14 @@ void Aug::gen(std::mt19937 &gn)
 	augmentation = true;
     xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
     yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
-    contrast = 0.1 * distr(gn);
-    kr = 0.98 + 0.1 * distr(gn); kg = kb = kr;
-    kg = 0.98 + 0.1 * distr(gn);
-    kb = 0.98 + 0.1 * distr(gn);
-//    zoomx = 0.98 + 0.1 * distr(gn);
-//    zoomy = 0.98 + 0.1 * distr(gn);
-//    angle = a2r(3. * distr(gn));
+    contrast = 0.05 * distr(gn);
+    float rnd1 = 0.1 * distr(gn);
+    kr = 0.98 + rnd1 + 0.02 * distr(gn);
+    kg = 0.98 + rnd1 + 0.02 * distr(gn);
+    kb = 0.98 + rnd1 + 0.02 * distr(gn);
+   zoomx = 0.98 + 0.1 * distr(gn);
+   zoomy = 0.98 + 0.1 * distr(gn);
+    angle = a2r(5. * distr(gn));
 	std::binomial_distribution<int> bd(1, 0.5);
 	//vflip = bd(gn);
 	hflip = bd(gn);
