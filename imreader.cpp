@@ -143,20 +143,19 @@ ImReader::~ImReader()
 
 void ImReader::init()
 {
-    //QDir dir(m_image_path);
-
-    int dir_count = number_of_files_in_directory(m_image_path.toStdString());
-
-    if(dir_count == 0){
-		qDebug() << "ERROR: dir is empty";
-		return;
-	}
-
-	m_all_count = 0;
-
-	int numb = 0;
 #if 0
-	for(uint i = 0; i < dir.count(); ++i){
+    QDir dir(m_image_path);
+
+    if(dir.count() == 0){
+        qDebug() << "ERROR: dir is empty";
+        return;
+    }
+
+    m_all_count = 0;
+
+    int numb = 0;
+
+    for(uint i = 0; i < dir.count(); ++i){
 		QFileInfo fi(dir.path() + "/" + dir[i]);
 		if(!fi.isDir() || dir[i] == "." || dir[i] == "..")
 			continue;
@@ -176,6 +175,17 @@ void ImReader::init()
 		m_dirs.push_back(dir[i].toStdString());
 	}
 #else
+    int dir_count = number_of_files_in_directory(m_image_path.toStdString());
+
+    if(dir_count == 0){
+        qDebug() << "ERROR: dir is empty";
+        return;
+    }
+
+    m_all_count = 0;
+
+    int numb = 0;
+
     for(auto& it: std::experimental::filesystem::directory_iterator(m_image_path.toStdString())){
         std::experimental::filesystem::path fpath = it.path();
         std::string fname = fpath.filename();
@@ -194,7 +204,7 @@ void ImReader::init()
         std::cout << numb++ << ": FILES[" << fname << ", " << imnet::getNumberOfList(fname) << "]=" << files.size();
         std::cout << std::endl << std::flush;
         m_files.push_back(files);
-        m_dirs.push_back(fpath);
+        m_dirs.push_back(fname);
     }
 #endif
 	qDebug() << "DIRS" << m_dirs.size();
