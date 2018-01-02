@@ -20,6 +20,15 @@ static std::mt19937 _rnd;
 std::map<int, std::vector< int > > _predicted;
 
 ///////////////////////
+
+
+std::size_t number_of_files_in_directory(std::experimental::filesystem::path path)
+{
+    using std::experimental::filesystem::directory_iterator;
+    return std::distance(directory_iterator(path), directory_iterator{});
+}
+
+///////////////////////
 /// \brief check
 /// \param classes
 /// \param predicted
@@ -134,9 +143,11 @@ ImReader::~ImReader()
 
 void ImReader::init()
 {
-	QDir dir(m_image_path);
+    //QDir dir(m_image_path);
 
-	if(dir.count() == 0){
+    int dir_count = number_of_files_in_directory(m_image_path.toStdString());
+
+    if(dir_count == 0){
 		qDebug() << "ERROR: dir is empty";
 		return;
 	}
@@ -144,6 +155,7 @@ void ImReader::init()
 	m_all_count = 0;
 
 	int numb = 0;
+#if 0
 	for(uint i = 0; i < dir.count(); ++i){
 		QFileInfo fi(dir.path() + "/" + dir[i]);
 		if(!fi.isDir() || dir[i] == "." || dir[i] == "..")
@@ -163,6 +175,28 @@ void ImReader::init()
 		m_files.push_back(files);
 		m_dirs.push_back(dir[i].toStdString());
 	}
+#else
+    for(auto& it: std::experimental::filesystem::directory_iterator(m_image_path.toStdString())){
+        std::experimental::filesystem::path fpath = it.path();
+        std::string fname = fpath.filename();
+        if(!std::experimental::filesystem::is_directory(fpath) || fname == "." || fname == "..")
+            continue;
+
+        std::vector< std::string > files;
+        for(auto& itin: std::experimental::filesystem::directory_iterator(fpath)){
+            std::experimental::filesystem::path fpath2 = itin.path();
+            std::string fname2 = fpath2.filename();
+            if(fname2 == "." || fname2 == "..")
+                continue;
+            files.push_back(fpath2);
+        }
+        m_all_count += files.size();
+        std::cout << numb++ << ": FILES[" << fname << ", " << imnet::getNumberOfList(fname) << "]=" << files.size();
+        std::cout << std::endl << std::flush;
+        m_files.push_back(files);
+        m_dirs.push_back(fpath);
+    }
+#endif
 	qDebug() << "DIRS" << m_dirs.size();
 }
 
@@ -234,7 +268,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 			while(true){
 				try{
-					Xi = get_image(m_image_path.toStdString() + "/" + m_files[id1][id2], _aug);
+                    Xi = get_image(m_files[id1][id2], _aug);
 					break;
 				}catch(...){
 					std::cout << "Error on get image. Next...\n";
@@ -419,12 +453,6 @@ void ImReader::getMat(const ct::Matf &in, cv::Mat *out, const ct::Size sz)
 void ImReader::setImagePath(const QString &path)
 {
 	m_image_path = path;
-}
-
-std::size_t number_of_files_in_directory(std::experimental::filesystem::path path)
-{
-    using std::experimental::filesystem::directory_iterator;
-    return std::distance(directory_iterator(path), directory_iterator{});
 }
 
 void ImReader::setValidation(const std::string &folder, const std::string groundtruth_file)
