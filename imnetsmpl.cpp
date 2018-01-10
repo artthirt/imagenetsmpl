@@ -162,6 +162,8 @@ void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut, bool dro
 	}
 
 	yOut = m_mlp.back().A1;
+
+//	throw new std::string("cpu");
 }
 
 void ImNetSmpl::backward(const ct::Matf &Delta)

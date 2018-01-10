@@ -310,6 +310,8 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, std::vector< gp
     }
 
     *pyOut = &m_mlp.back().vecA1;
+
+//	throw new std::string("gpu");
 }
 
 void ImNetSmplGpu::backward(const std::vector< gpumat::GpuMat > &Delta)
