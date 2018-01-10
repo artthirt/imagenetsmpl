@@ -11,7 +11,7 @@
 
 #include <chrono>
 
-const int cnv_size = 9;
+const int cnv_size = 6;
 const int mlp_size = 2;
 
 ImNetSmpl::ImNetSmpl()
@@ -43,15 +43,12 @@ void ImNetSmpl::init()
 
 	m_conv.resize(cnv_size);
 
-	m_conv[0].init(ct::Size(W, H), 3, 3, 64, ct::Size(5, 5), ct::LEAKYRELU, false, true, false);
-	m_conv[1].init(m_conv[0].szOut(), 64, 2, 64, ct::Size(5, 5), ct::LEAKYRELU, false, true, true);
-	m_conv[2].init(m_conv[1].szOut(), 64, 1, 128, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
-	m_conv[3].init(m_conv[2].szOut(), 128, 2, 256, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
-	m_conv[4].init(m_conv[3].szOut(), 256, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
-	m_conv[5].init(m_conv[4].szOut(), 512, 2, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
-	m_conv[6].init(m_conv[5].szOut(), 512, 1, 1024, ct::Size(1, 1), ct::LEAKYRELU, false, true, true);
-	m_conv[7].init(m_conv[6].szOut(), 1024, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
-	m_conv[8].init(m_conv[7].szOut(), 512, 1, 128, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
+	m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7), ct::LEAKYRELU, false, true, false, true);
+	m_conv[1].init(m_conv[0].szOut(), 64, 2, 128, ct::Size(3, 3), ct::LEAKYRELU, false, true, true, true);
+	m_conv[2].init(m_conv[1].szOut(), 128, 2, 384, ct::Size(3, 3), ct::LEAKYRELU, false, true, true, true);
+	m_conv[3].init(m_conv[2].szOut(), 384, 2, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
+	m_conv[4].init(m_conv[3].szOut(), 512, 1, 512, ct::Size(1, 1), ct::LEAKYRELU, false, true, true);
+	m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), ct::LEAKYRELU, false, true, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -156,7 +153,7 @@ void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut, bool dro
 
 	ct::Matf *pX = &m_A1;
 	for(size_t i = 0; i < m_mlp.size(); ++i){
-		ct::mlp_mixed& mlp = m_mlp[i];
+		ct::mlpf& mlp = m_mlp[i];
 		mlp.forward(pX);
 		pX = &mlp.A1;
 //		m_mlp[0].forward(&m_A1);
@@ -174,7 +171,7 @@ void ImNetSmpl::backward(const ct::Matf &Delta)
 
 	ct::Matf *pX = (ct::Matf*)&Delta;
 	for(int i = m_mlp.size() - 1; i >= 0; i--){
-		ct::mlp_mixed& mlp = m_mlp[i];
+		ct::mlpf& mlp = m_mlp[i];
 		mlp.backward(*pX);
 		pX = &mlp.DltA0;
 //	m_mlp.back().backward(Delta);
@@ -314,7 +311,7 @@ void ImNetSmpl::save_net(const QString &name)
 //	fs.write((char*)&m_szA0, sizeof(m_szA0));
 
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		conv2::convnn2_mixed &cnv = m_conv[i];
+		conv2::convnnf &cnv = m_conv[i];
 		cnv.write(fs);
 	}
 
@@ -349,7 +346,7 @@ void ImNetSmpl::load_net(const QString &name)
 	init();
 
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		conv2::convnn2_mixed &cnv = m_conv[i];
+		conv2::convnnf &cnv = m_conv[i];
 		cnv.read(fs);
 	}
 
@@ -388,7 +385,7 @@ void ImNetSmpl::save_net2(const QString &name)
 	fs.write((char*)&mlps, sizeof(mlps));
 
 	for(size_t i = 0; i < m_conv.size(); ++i){
-		conv2::convnn2_mixed &cnv = m_conv[i];
+		conv2::convnnf &cnv = m_conv[i];
 		cnv.write2(fs);
 	}
 
@@ -397,7 +394,7 @@ void ImNetSmpl::save_net2(const QString &name)
 	}
 
 	int use_bn = 0, layers = 0;
-	for(conv2::convnn2_mixed& item: m_conv){
+	for(conv2::convnnf& item: m_conv){
 		if(item.use_bn()){
 			use_bn = 1;
 			layers++;
@@ -410,7 +407,7 @@ void ImNetSmpl::save_net2(const QString &name)
 		for(size_t i = 0; i < m_conv.size(); ++i){
 			if(m_conv[i].use_bn()){
 				fs.write((char*)&i, sizeof(i));
-				m_conv[i].bn.write(fs);
+				m_conv[i].bn().write(fs);
 			}
 		}
 	}
@@ -458,14 +455,14 @@ void ImNetSmpl::load_net2(const QString &name)
 
 	printf("conv\n");
 	for(size_t i = 0; i < cnvs; ++i){
-		conv2::convnn2_mixed &cnv = m_conv[i];
+		conv2::convnnf &cnv = m_conv[i];
 		cnv.read2(fs);
 		printf("layer %d: rows %d, cols %d\n", i, cnv.W.rows, cnv.W.cols);
 	}
 
 	printf("mlp\n");
 	for(size_t i = 0; i < mlps; ++i){
-		ct::mlp_mixed &mlp = m_mlp[i];
+		ct::mlpf &mlp = m_mlp[i];
 		mlp.read2(fs);
 		printf("layer %d: rows %d, cols %d\n", i, mlp.W.rows, mlp.W.cols);
 	}
@@ -478,7 +475,7 @@ void ImNetSmpl::load_net2(const QString &name)
 			int64_t layer = -1;
 			fs.read((char*)&layer, sizeof(layer));
 			if(layer >=0 && layer < 10000){
-				m_conv[layer].bn.read(fs);
+				m_conv[layer].bn().read(fs);
 //				gpumat::save_gmat(m_conv[layer].bn.gamma, "g" + std::to_string(layer) +".txt");
 //				gpumat::save_gmat(m_conv[layer].bn.betha, "b" + std::to_string(layer) +".txt");
 			}

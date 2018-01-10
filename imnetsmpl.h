@@ -3,8 +3,8 @@
 
 #include "imreader.h"
 
-#include "convnn2_mixed.h"
-#include "mlp_mixed.h"
+#include "convnn2.h"
+#include "mlp.h"
 
 class ImNetSmpl
 {
@@ -63,8 +63,8 @@ private:
 
 	bool m_useBackConv;
 
-	std::vector< conv2::convnn2_mixed > m_conv;
-	std::vector< ct::mlp_mixed > m_mlp;
+	std::vector< conv2::convnnf > m_conv;
+	std::vector< ct::mlpf > m_mlp;
 	int m_classes;
 	ct::Matf m_A1;
 //	ct::Matf m_A2;
@@ -73,8 +73,8 @@ private:
 //	ct::Matf D2;
 	std::vector< ct::Matf > deltas1;
 //	std::vector< ct::Matf > deltas2;
-	ct::MlpMomentumOptimizerMixed m_optim;
-	conv2::CnvMomentumOptimizerMixed m_cnv_optim;
+	ct::MlpAdamOptimizer<float> m_optim;
+	conv2::CnvAdamOptimizer<float> m_cnv_optim;
 
 	QString m_model;
 	QString m_save_model;

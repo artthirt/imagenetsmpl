@@ -186,19 +186,21 @@ void ImReader::init()
 
     int numb = 0;
 
-    for(auto& it: std::experimental::filesystem::directory_iterator(m_image_path.toStdString())){
-        std::experimental::filesystem::path fpath = it.path();
-        std::string fname = fpath.filename();
+	using namespace std::experimental;
+
+	for(auto& it: filesystem::directory_iterator(m_image_path.toStdString())){
+		filesystem::path fpath = it.path();
+		std::string fname = fpath.filename().string();
         if(!std::experimental::filesystem::is_directory(fpath) || fname == "." || fname == "..")
             continue;
 
         std::vector< std::string > files;
         for(auto& itin: std::experimental::filesystem::directory_iterator(fpath)){
             std::experimental::filesystem::path fpath2 = itin.path();
-            std::string fname2 = fpath2.filename();
+			std::string fname2 = fpath2.filename().string();
             if(fname2 == "." || fname2 == "..")
                 continue;
-            files.push_back(fpath2);
+			files.push_back(fpath2.string());
         }
         m_all_count += files.size();
         std::cout << numb++ << ": FILES[" << fname << ", " << imnet::getNumberOfList(fname) << "]=" << files.size();
@@ -520,8 +522,8 @@ void ImReader::setValidation(const std::string &folder, const std::string ground
     for(const std::experimental::filesystem::directory_entry& it: std::experimental::filesystem::directory_iterator(folder)){
         if(it == "." || it == "..")
             continue;
-        m_val_files.push_back(it.path());
-        m_val_gt.push_back(values[it.path().filename()]);
+		m_val_files.push_back(it.path().string());
+		m_val_gt.push_back(values[it.path().filename().string()]);
         std::cout << "files: progress " << (double)index++ / files_count * 100. << "           \r" << std::flush;
     }
 
