@@ -233,8 +233,9 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 	if(train){
 		if(m_saved.size() && aug){
-			int cnt = std::min(batch/4, FOR_REPEAT_BATCH);
-			if(!cnt) cnt = std::max(1, batch/4);
+            int cnt_batch = batch / 2;
+            int cnt = std::min(cnt_batch, FOR_REPEAT_BATCH);
+            if(!cnt) cnt = std::max(1, cnt_batch);
 			for(int off = 0; off < cnt && !m_saved.empty(); ++off){
 				X[off] = m_saved.front().X;
 				y.ptr(off)[0] = m_saved.front().id;
@@ -637,13 +638,17 @@ void ImReader::setSeed(int seed)
 	m_gt.seed(seed);
 }
 
-void ImReader::push_to_saved(const ct::Matf &X, float id)
+void ImReader::push_to_saved(const ct::Matf &X, float id, float delta)
 {
-	if(m_saved.size() > MAX_SAVED){
-		return;
+    while(m_saved.size() > MAX_SAVED){
+        m_saved.pop_back();
 	}
-	m_saved.push_back(Saved(X, id));
-}
+    m_saved.push_back(Saved(X, id, delta));
+
+    m_saved.sort([](const Saved& s1, const Saved& s2){
+        return s1.delta > s2.delta;
+    });
+ }
 
 ///////////////////////////////////
 
@@ -668,19 +673,21 @@ Aug::Aug()
 
 void Aug::gen(std::mt19937 &gn)
 {
-	std::uniform_real_distribution<float> distr(-1., 1.);
+    augmentation = true;
 
-	augmentation = true;
-    xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
-    yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
-    contrast = 0.05 * distr(gn);
+#if 1
+    std::uniform_real_distribution<float> distr(-1., 1.);
+    xoff = (float)ImReader::IM_WIDTH * 0.05 * distr(gn);
+    yoff = (float)ImReader::IM_HEIGHT * 0.05 * distr(gn);
+    contrast = 0.1 * distr(gn);
     float rnd1 = 0.1 * distr(gn);
     kr = 0.98 + rnd1 + 0.02 * distr(gn);
     kg = 0.98 + rnd1 + 0.02 * distr(gn);
     kb = 0.98 + rnd1 + 0.02 * distr(gn);
-   zoomx = 0.98 + 0.1 * distr(gn);
-   zoomy = 0.98 + 0.1 * distr(gn);
-    angle = a2r(5. * distr(gn));
+   zoomx = 1. + 0.1 * distr(gn);
+   zoomy = 1. + 0.1 * distr(gn);
+    angle = a2r(3. * distr(gn));
+#endif
 	std::binomial_distribution<int> bd(1, 0.5);
 	//vflip = bd(gn);
 	hflip = bd(gn);

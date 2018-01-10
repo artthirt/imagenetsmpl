@@ -6,7 +6,7 @@
 #include <QDir>
 #include <QFile>
 
-const int cnv_size = 7;
+const int cnv_size = 6;
 const int mlp_size = 3;
 
 //const int stop_cnv_layer = 6;
@@ -120,18 +120,21 @@ void ImNetSmplGpu::init()
 
 	m_conv.resize(cnv_size);
 
-    m_conv[0].init(ct::Size(W, H), 3, 4, 96, ct::Size(9, 9), gpumat::LEAKYRELU, false, true, false, true);
-    m_conv[1].init(m_conv[0].szOut(), 96, 2, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
-    m_conv[2].init(m_conv[1].szOut(), 128, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-    m_conv[3].init(m_conv[2].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-    m_conv[4].init(m_conv[3].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-    m_conv[5].init(m_conv[4].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-    m_conv[6].init(m_conv[5].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//    m_conv[7].init(m_conv[6].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//    m_conv[8].init(m_conv[7].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//    m_conv[7].init(m_conv[6].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//    m_conv[8].init(m_conv[7].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//    m_conv[9].init(m_conv[8].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
+    m_conv[0].init(ct::Size(W, H), 3, 4, 64, ct::Size(7, 7), gpumat::LEAKYRELU, false, true, false, true);
+    m_conv[1].init(m_conv[0].szOut(), 64, 2, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
+    m_conv[2].init(m_conv[1].szOut(), 128, 2, 384, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
+    m_conv[3].init(m_conv[2].szOut(), 384, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[4].init(m_conv[3].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
+    m_conv[5].init(m_conv[4].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+//    m_conv[6].init(m_conv[5].szOut(), 64, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, false, true, true);
+//    m_conv[7].init(m_conv[6].szOut(), 128, 1, 128, ct::Size(1, 1), gpumat::LEAKYRELU, false, false, true, true);
+//    m_conv[8].init(m_conv[7].szOut(), 128, 2, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, false, true, true);
+//    m_conv[9].init(m_conv[8].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, false, true);
+//    m_conv[10].init(m_conv[9].szOut(), 256, 1, 256, ct::Size(1, 1), gpumat::LEAKYRELU, false, false, true, true);
+//    m_conv[11].init(m_conv[10].szOut(), 256, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, false, true, true);
+//    m_conv[12].init(m_conv[11].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, false, true);
+//    m_conv[13].init(m_conv[12].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, false, true, true);
+//    m_conv[14].init(m_conv[13].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, false, true);
 
 //	printf("Out=[%dx%dx%d]\n", m_conv.back().szOut().width, m_conv.back().szOut().height, m_conv.back().K);
 
@@ -158,8 +161,8 @@ void ImNetSmplGpu::init()
 		m_conv[i].setDropout(0.7);
 	}
 
-    m_mlp[0].setDropout(.7);
-    m_mlp[1].setDropout(.7);
+    m_mlp[0].setDropout(.9);
+    m_mlp[1].setDropout(.9);
 	m_mlp[2].setDropout(1.);
 
 	m_init = true;
@@ -307,7 +310,6 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, std::vector< gp
     }
 
     *pyOut = &m_mlp.back().vecA1;
-
 }
 
 void ImNetSmplGpu::backward(const std::vector< gpumat::GpuMat > &Delta)
@@ -338,6 +340,11 @@ void ImNetSmplGpu::backward(const std::vector< gpumat::GpuMat > &Delta)
 
         for(size_t i = 0; i < pD->size(); ++i){
             (*pD)[i].reshape((K * K), m_conv.back().kernels);
+        }
+
+        /// reshape cnv
+        for(gpumat::GpuMat& xout: m_conv.back().XOut()){
+            xout.reshape((K * K), m_conv.back().kernels);
         }
 
         for(int i = m_conv.size() - 1; i >= m_layer_from; i--){
@@ -691,20 +698,20 @@ void ImNetSmplGpu::load_net2(const QString &name)
 #endif
 	}
 
-	int use_bn = 0, layers = 0;
-	fs.read((char*)&use_bn, sizeof(use_bn));
-	fs.read((char*)&layers, sizeof(layers));
-	if(use_bn > 0){
-		for(int i = 0; i < layers; ++i){
-			int64_t layer = -1;
-			fs.read((char*)&layer, sizeof(layer));
-			if(layer >=0 && layer < 10000){
-				m_conv[layer].bn.read(fs);
+    int use_bn = 0, layers = 0;
+    fs.read((char*)&use_bn, sizeof(use_bn));
+    fs.read((char*)&layers, sizeof(layers));
+    if(use_bn > 0){
+        for(int i = 0; i < layers; ++i){
+            int64_t layer = -1;
+            fs.read((char*)&layer, sizeof(layer));
+            if(layer >=0 && layer < 10000){
+                m_conv[layer].bn.read(fs);
 //				gpumat::save_gmat(m_conv[layer].bn.gamma, "g" + std::to_string(layer) +".txt");
 //				gpumat::save_gmat(m_conv[layer].bn.betha, "b" + std::to_string(layer) +".txt");
-			}
-		}
-	}
+            }
+        }
+    }
 
 	printf("model loaded.\n");
 
@@ -765,7 +772,7 @@ void ImNetSmplGpu::check_delta(const std::vector< gpumat::GpuMat > &g_D, const B
 		int id = idx[i];
 		float f = df[id];
         if(f > 0.5){
-			m_reader->push_to_saved(btch.X[id], btch.y.ptr(id)[0]);
+            m_reader->push_to_saved(btch.X[id], btch.y.ptr(id)[0], f);
 		}
     }
 }

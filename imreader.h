@@ -61,12 +61,14 @@ struct Batch{
 
 struct Saved{
 	Saved(): id(0){}
-	Saved(const ct::Matf& _X, float _id){
+    Saved(const ct::Matf& _X, float _id, float _delta){
 		_X.copyTo(X);
 		id = _id;
+        delta = _delta;
 	}
 	ct::Matf X;
 	float id;
+    float delta;
 };
 
 /**
@@ -114,7 +116,7 @@ public:
 
 	void setSeed(int seed);
 
-	void push_to_saved(const ct::Matf& X, float id);
+    void push_to_saved(const ct::Matf& X, float id, float delta);
 
 private:
 	std::mt19937 m_gt;
@@ -135,7 +137,7 @@ private:
 	std::string m_val_gt_file;
 	std::vector< int > m_val_gt;
 
-	std::list< Saved > m_saved;
+    std::list< Saved > m_saved;
 };
 
 template< typename T1, typename T2>
