@@ -12,7 +12,7 @@
 #include <chrono>
 
 const int cnv_size = 6;
-const int mlp_size = 2;
+const int mlp_size = 3;
 
 ImNetSmpl::ImNetSmpl()
 {
@@ -57,8 +57,8 @@ void ImNetSmpl::init()
 	m_mlp.resize(mlp_size);
 
 	m_mlp[0].init(outFeatures,	4096,		ct::LEAKYRELU);
-//	m_mlp[1].init(4096,			4096,		ct::LEAKYRELU);
-	m_mlp[1].init(4096,			m_classes,	ct::SOFTMAX);
+	m_mlp[1].init(4096,			4096,		ct::LEAKYRELU);
+	m_mlp[2].init(4096,			m_classes,	ct::SOFTMAX);
 
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
@@ -67,7 +67,7 @@ void ImNetSmpl::init()
 	m_cnv_optim.setAlpha(m_learningRate);
 
 	for(int i = 0; i < (int)m_mlp.size(); ++i){
-		m_mlp[i].setDropout(0.93f);
+		m_mlp[i].setDropout(0.9f);
 	}
 
 	m_init = true;
