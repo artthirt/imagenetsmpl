@@ -57,7 +57,7 @@ std::vector< SortC > sort_column(const ct::Matf& mat, int row)
 
 double check2(const std::vector< gpumat::GpuMat >& prob, const ct::Matf& classes)
 {
-    if(classes.empty() || classes.rows != prob.size() || classes.cols != 1)
+    if(classes.empty() || classes.rows != (int)prob.size() || classes.cols != 1)
 		return -1.;
 
     std::vector< ct::Matf> mp;
@@ -157,7 +157,7 @@ void ImNetSmplGpu::init()
 //	m_optim.setDelimiterIteration(16);
 //	m_cnv_optim.setDelimiterIteration(16);
 
-	for(int i = 0; i < m_conv.size(); ++i){
+    for(int i = 0; i < (int)m_conv.size(); ++i){
 		m_conv[i].setDropout(0.7);
 	}
 
@@ -311,7 +311,9 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, std::vector< gp
 
     *pyOut = &m_mlp.back().vecA1;
 
-//	throw new std::string("gpu");
+#ifdef DEBUG_MODE
+    throw new std::string("gpu");
+#endif
 }
 
 void ImNetSmplGpu::backward(const std::vector< gpumat::GpuMat > &Delta)
@@ -377,7 +379,7 @@ ct::Matf ImNetSmplGpu::predict(std::vector< gpumat::GpuMat > &gy)
 
     res.setSize(y.size(), 1);
 
-    for(int i = 0; i < y.size(); ++i){
+    for(int i = 0; i < (int)y.size(); ++i){
         res.ptr()[i] = y[i].argmax(0, 1);
 	}
 	return res;
@@ -404,7 +406,7 @@ ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
 
     my.setSize(y.size(), y[0].total());
 
-    for(int i = 0; i < y.size(); ++i){
+    for(int i = 0; i < (int)y.size(); ++i){
         for(int j = 0; j < my.cols; ++j){
             my.ptr(i)[j] = y[i].ptr()[j];
         }
@@ -456,7 +458,7 @@ void ImNetSmplGpu::predicts(const QString &sdir)
 		system_clock::now().time_since_epoch()
 	);
 
-	for(int i= 0; i < dir.count(); ++i){
+    for(int i = 0; i < (int)dir.count(); ++i){
 		QString s = dir.path() + "/" + dir[i];
 		QFileInfo f(s);
 		if(f.isFile()){
@@ -500,7 +502,7 @@ float ImNetSmplGpu::loss(const gpumat::GpuMat &y, const std::vector< gpumat::Gpu
     }
 
     r.setSize(R.size(), 1);
-    for(int i = 0; i < R.size(); ++i){
+    for(int i = 0; i < (int)R.size(); ++i){
         r.ptr(i)[0] = R[i].sum();
     }
 
@@ -663,7 +665,7 @@ void ImNetSmplGpu::load_net2(const QString &name)
 
 	init();
 
-	int cnvs, mlps;
+    uint cnvs, mlps;
 
 	/// size of convolution array
 	fs.read((char*)&cnvs, sizeof(cnvs));
@@ -674,7 +676,7 @@ void ImNetSmplGpu::load_net2(const QString &name)
 
 #define USE_MLP 1
 
-	if(m_conv.size() < cnvs)
+    if(m_conv.size() < cnvs)
 		m_conv.resize(cnvs);
 #if USE_MLP
 	m_mlp.resize(mlps);
@@ -683,7 +685,7 @@ void ImNetSmplGpu::load_net2(const QString &name)
 	for(size_t i = 0; i < cnvs; ++i){
 		gpumat::convnn_gpu &cnv = m_conv[i];
 		cnv.read2(fs);
-		printf("layer %d: rows %d, cols %d\n", i, cnv.W.rows, cnv.W.cols);
+        printf("layer %d: rows %d, cols %d\n", (int)i, cnv.W.rows, cnv.W.cols);
 	}
 
 	printf("mlp\n");
@@ -691,7 +693,7 @@ void ImNetSmplGpu::load_net2(const QString &name)
 #if USE_MLP
 		gpumat::mlp &mlp = m_mlp[i];
 		mlp.read2(fs);
-		printf("layer %d: rows %d, cols %d\n", i, mlp.W.rows, mlp.W.cols);
+        printf("layer %d: rows %d, cols %d\n", (int)i, mlp.W.rows, mlp.W.cols);
 #else
 		gpumat::GpuMat W, B;
 		gpumat::read_fs2(fs, W);
@@ -754,7 +756,7 @@ void ImNetSmplGpu::check_delta(const std::vector< gpumat::GpuMat > &g_D, const B
 
     d.setSize(D.size(), 1);
 
-    for(int i = 0; i < D.size(); ++i){
+    for(int i = 0; i < (int)D.size(); ++i){
         d.ptr()[i] = D[i].sum();
     }
 

@@ -247,7 +247,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 	}
 
 //#pragma omp parallel for
-	for(uint i = off; i < batch; ++i){
+    for(int i = off; i < batch; ++i){
 //		int train_edge = TRAIN_EDGE;
 
 //		if(len < TRAIN_EDGE){
@@ -314,12 +314,12 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 //	std::cout << "indexes: " << ss2.str() << std::endl;
 }
 
-void offsetImage(cv::Mat &image, cv::Scalar bordercolour, int xoffset, int yoffset, float angle)
+void offsetImage(cv::Mat &image, int xoffset, int yoffset, float angle)
 {
 	using namespace cv;
 	float mdata[] = {
-		cos(angle), sin(angle), xoffset,
-		-sin(angle), cos(angle), yoffset
+        cos(angle), sin(angle), (float)xoffset,
+        -sin(angle), cos(angle), (float)yoffset
 	};
 
 	Mat M(2, 3, CV_32F, mdata);
@@ -388,7 +388,7 @@ ct::Matf ImReader::get_image(const std::string &name, const Aug &aug)
 	}
 
 	if(aug.augmentation && (aug.xoff != 0 || aug.yoff != 0)){
-		offsetImage(m, cv::Scalar(0), aug.xoff, aug.yoff, aug.angle);
+        offsetImage(m, aug.xoff, aug.yoff, aug.angle);
 	}
 	if(aug.inv){
 		cv::bitwise_not(m, m);
@@ -546,7 +546,7 @@ void ImReader::setValidation(const std::string &folder, const std::string ground
 			int idy = imnet::getNumberOfList(n);
 			cat_ids[idy] = true;
 		}
-		for(int i = 0; i < m_val_files.size(); ++i){
+        for(int i = 0; i < (int)m_val_files.size(); ++i){
 			if(contain(cat_ids, m_val_gt[i])){
 				new_files.push_back(m_val_files[i]);
 				new_id.push_back(m_val_gt[i]);
@@ -564,7 +564,7 @@ void ImReader::setValidation(const std::string &folder, const std::string ground
 //			std::cout << kv.first << ": " << kv.second << std::endl;
 //		}
 
-		printf("real validation files %d\n", m_val_gt.size());
+        printf("real validation files %d\n", (int)m_val_gt.size());
 	}
 }
 
@@ -630,7 +630,7 @@ void ImReader::run()
 
 void ImReader::setSeed(int seed)
 {
-#ifndef CV_MAJOR_VERSION == 3 && CV_MINOR_VERSION == 1
+#if CV_MAJOR_VERSION < 3
 	cv::setRNGSeed(seed);
 #else
 	cv::theRNG().state = seed;

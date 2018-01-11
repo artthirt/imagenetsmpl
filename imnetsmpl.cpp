@@ -163,7 +163,9 @@ void ImNetSmpl::forward(const std::vector<ct::Matf> &X, ct::Matf &yOut, bool dro
 
 	yOut = m_mlp.back().A1;
 
-//	throw new std::string("cpu");
+#ifdef DEBUG_MODE
+    throw new std::string("cpu");
+#endif
 }
 
 void ImNetSmpl::backward(const ct::Matf &Delta)
@@ -441,7 +443,7 @@ void ImNetSmpl::load_net2(const QString &name)
 
 	init();
 
-	int cnvs, mlps;
+    uint cnvs, mlps;
 
 	/// size of convolution array
 	fs.read((char*)&cnvs, sizeof(cnvs));
@@ -459,14 +461,14 @@ void ImNetSmpl::load_net2(const QString &name)
 	for(size_t i = 0; i < cnvs; ++i){
 		conv2::convnnf &cnv = m_conv[i];
 		cnv.read2(fs);
-		printf("layer %d: rows %d, cols %d\n", i, cnv.W.rows, cnv.W.cols);
+        printf("layer %d: rows %d, cols %d\n", (int)i, cnv.W.rows, cnv.W.cols);
 	}
 
 	printf("mlp\n");
 	for(size_t i = 0; i < mlps; ++i){
 		ct::mlpf &mlp = m_mlp[i];
 		mlp.read2(fs);
-		printf("layer %d: rows %d, cols %d\n", i, mlp.W.rows, mlp.W.cols);
+        printf("layer %d: rows %d, cols %d\n", (int)i, mlp.W.rows, mlp.W.cols);
 	}
 
 	int use_bn = 0, layers = 0;

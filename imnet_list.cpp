@@ -1011,7 +1011,7 @@ std::string imnet_list[] = {
 size_t sizeof_imnet()
 {
 	size_t res = sizeof(imnet_list) / sizeof(*imnet_list);
-	printf("size of ImageNet list %d\n", res);
+    printf("size of ImageNet list %d\n", (int)res);
 	return res;
 }
 
