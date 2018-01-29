@@ -9,6 +9,9 @@
 const int cnv_size = 9;
 const int mlp_size = 3;
 const int everytimeN = 100;
+const int default_check_count = 1000;
+
+#define USE_MLP 1
 
 //const int stop_cnv_layer = 6;
 
@@ -91,7 +94,7 @@ ImNetSmplGpu::ImNetSmplGpu()
 	m_learningRate = 0.001;
 	m_useBackConv = true;
 	m_init = false;
-	m_check_count = 600;
+    m_check_count = default_check_count;
 	m_classes = 1000;
 	m_model = "model.bin";
 	m_save_model = "model.bin_ext";
@@ -125,12 +128,12 @@ void ImNetSmplGpu::init()
     m_conv[1].init(m_conv[0].szOut(), 64, 2, 64, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[2].init(m_conv[1].szOut(), 64, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[3].init(m_conv[2].szOut(), 128, 2, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
-    m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
+    m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
     m_conv[5].init(m_conv[4].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-    m_conv[6].init(m_conv[5].szOut(), 256, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[6].init(m_conv[5].szOut(), 256, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[7].init(m_conv[6].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-    m_conv[8].init(m_conv[7].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
-//    m_conv[9].init(m_conv[8].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
+    m_conv[8].init(m_conv[7].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
+//    m_conv[9].init(m_conv[8].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
 //    m_conv[10].init(m_conv[9].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
 //    m_conv[11].init(m_conv[10].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
 //    m_conv[12].init(m_conv[11].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true);
@@ -674,8 +677,6 @@ void ImNetSmplGpu::load_net2(const QString &name)
 	fs.read((char*)&mlps, sizeof(mlps));
 
 	printf("Load model: conv size %d, mlp size %d\n", cnvs, mlps);
-
-#define USE_MLP 1
 
     if(m_conv.size() < cnvs)
 		m_conv.resize(cnvs);
