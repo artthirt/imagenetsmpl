@@ -71,3 +71,6 @@ UI_DIR += tmp/$$TMP/ui
 OBJECTS_DIR += tmp/$$TMP/obj
 RCC_DIR += tmp/$$TMP/rcc
 MOC_DIR += tmp/$$TMP/moc
+
+RESOURCES += \
+    resource.qrc

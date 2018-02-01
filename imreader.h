@@ -10,8 +10,10 @@
 #include <mutex>
 #include <map>
 
+/// maximum samples saved for use repeat
 #define MAX_SAVED			100
-#define FOR_REPEAT_BATCH	100
+/// number samples for add to batch with max distance to target
+#define NUMBER_REPEAT       4
 
 struct Aug{
 	Aug();
@@ -103,7 +105,7 @@ public:
 
 	void setImagePath(const QString& path);
 
-	void setValidation(const std::string &folder, const std::string groundtruth_file);
+    void setValidation(const std::string &folder);
 
 	Batch &front();
 	void pop_front();

@@ -235,8 +235,8 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 	if(train){
 		if(m_saved.size() && aug){
-            int cnt_batch = batch / 2;
-            int cnt = std::min(cnt_batch, FOR_REPEAT_BATCH);
+            int cnt_batch = NUMBER_REPEAT;
+            int cnt = std::min(batch, cnt);
             if(!cnt) cnt = std::max(1, cnt_batch);
 			for(int off = 0; off < cnt && !m_saved.empty(); ++off){
 				X[off] = m_saved.front().X;
@@ -468,16 +468,16 @@ void ImReader::setImagePath(const QString &path)
 	m_image_path = path;
 }
 
-void ImReader::setValidation(const std::string &folder, const std::string groundtruth_file)
+void ImReader::setValidation(const std::string &folder/*, const std::string groundtruth_file*/)
 {
 	QDir dir;
 	if(!dir.exists(QString::fromStdString(folder))
-			|| !QFile::exists(QString::fromStdString(groundtruth_file))){
-		printf("validation folder or validation groundtruth not set\n");
+            /*|| !QFile::exists(QString::fromStdString(groundtruth_file))*/){
+        printf("validation folder not set\n");
 		return;
 	}
 
-	m_val_gt_file = groundtruth_file;
+    m_val_gt_file = /*groundtruth_file*/":/data/resource/val.txt";
 
 	QFile file(QString::fromStdString(m_val_gt_file));
 	if(!file.open(QIODevice::ReadOnly)){
