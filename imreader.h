@@ -13,7 +13,7 @@
 /// maximum samples saved for use repeat
 #define MAX_SAVED			100
 /// number samples for add to batch with max distance to target
-#define NUMBER_REPEAT       4
+#define NUMBER_REPEAT       10
 
 struct Aug{
 	Aug();
