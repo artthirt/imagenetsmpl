@@ -17,7 +17,7 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 	std::map<std::string, std::string> res;
 	for(int i = 0; i < argc; ++i){
 		std::string str = argv[i];
-		if(str == "-f" && i < argc){
+        if(str == "-files" && i < argc){
 			res["imnet"] = argv[i + 1];
 		}
 		if(str == "-load" && i < argc){
@@ -59,8 +59,8 @@ std::map<std::string, std::string> parseArgs(int argc, char *argv[])
 //		if(str == "-validation_groundtruth" && i < argc){
 //			res["validation_groundtruth"] = argv[i + 1];
 //		}
-		if(str == "-validation_set" && i < argc){
-			res["validation_set"] = argv[i + 1];
+        if(str == "-val" && i < argc){
+            res["val"] = argv[i + 1];
 		}
 	}
 	return res;
@@ -199,19 +199,19 @@ int main(int argc, char *argv[])
 
 	if(res.empty()){
 		printf("Usage: app [OPTIONS]\n"
-			   "-f Path/To/ImageNet/Folder		- path to directory with ImageNet data\n"
-			   "-load path/to/model				- load model for network\n"
-			   "-image path/to/image			- predict one image\n"
-			   "-gpu							- use gpu\n"
-			   "-pass [numbers pass]            - size of pass *default: 1000\n"
-			   "-batch [number batch for one]   - size of batch for pass (default: 10)\n"
+               "-files Path/To/ImageNet/Folder  - path to directory with ImageNet data\n"
+               "-load path/to/model             - load model for network\n"
+               "-image path/to/image            - predict one image\n"
+               "-gpu                            - use gpu\n"
+               "-pass [numbers pass]            - size of pass *default: 1000\n"
+               "-batch [number batch for one]   - size of batch for pass (default: 10)\n"
 			   "-images path/to/dir/with/images - check all images in directory\n"
-			   "-lr learing_rate				- learing rate (default: 0.001"
-			   "-save path/to/model				- name for saved train model"
-			   "-load2 path/to/model			- load extension model with information about sizes of layers and matrices"
-			   "-seed number					- seed for set random seed for train"
-			   "-backconv bool					- use or not bakward pass for convolution"
-			   "-train_layer_from				- train conv layers from this to end");
+               "-lr learing_rate                - learing rate (default: 0.001"
+               "-save path/to/model             - name for saved train model"
+               "-load2 path/to/model            - load extension model with information about sizes of layers and matrices"
+               "-seed number                    - seed for set random seed for train"
+               "-backconv 0/1                   - use or not bakward pass for convolution"
+               "-train_layer_from number        - train conv layers from this to end");
 		return 1;
 	}
 
@@ -257,8 +257,8 @@ int main(int argc, char *argv[])
 	}
 
     std::string val_folder/*, val_gt*/;
-	if(contain(res, "validation_set")){
-		val_folder = res["validation_set"];
+    if(contain(res, "val")){
+        val_folder = res["val"];
 	}
 
 //	if(contain(res, "validation_groundtruth")){
