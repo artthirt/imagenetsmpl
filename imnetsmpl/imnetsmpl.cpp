@@ -211,9 +211,9 @@ ct::Matf ImNetSmpl::predict(ct::Matf &y)
 	return res;
 }
 
-ct::Matf ImNetSmpl::predict(const QString &name, bool show_debug)
+ct::Matf ImNetSmpl::predict(const std::string &name, bool show_debug)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 
 	if(!QFile::exists(n) || !m_reader)
 		return ct::Matf();
@@ -233,9 +233,9 @@ ct::Matf ImNetSmpl::predict(const QString &name, bool show_debug)
 	return y;
 }
 
-void ImNetSmpl::predicts(const QString &sdir)
+void ImNetSmpl::predicts(const std::string &sdir)
 {
-	QString n = QDir::fromNativeSeparators(sdir);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(sdir));
 	qDebug() << n;
 
 	QDir dir(n);
@@ -258,7 +258,7 @@ void ImNetSmpl::predicts(const QString &sdir)
 		QString s = dir.path() + "/" + dir[i];
 		QFileInfo f(s);
 		if(f.isFile()){
-			ct::Matf y = predict(s, false);
+            ct::Matf y = predict(s.toStdString(), false);
 			int cls = y.argmax(0, 1);
 			int cnt = stat[cls];
 			stat[cls] = cnt + 1;
@@ -292,14 +292,14 @@ float ImNetSmpl::loss(const ct::Matf &y, ct::Matf &y_)
 	return f;
 }
 
-void ImNetSmpl::setSaveModelName(const QString name)
+void ImNetSmpl::setSaveModelName(const std::string name)
 {
 	m_save_model = name;
 }
 
-void ImNetSmpl::save_net(const QString &name)
+void ImNetSmpl::save_net(const std::string &name)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 
 	std::fstream fs;
 	fs.open(n.toStdString(), std::ios_base::out | std::ios_base::binary);
@@ -326,9 +326,9 @@ void ImNetSmpl::save_net(const QString &name)
 	printf("model saved.\n");
 }
 
-void ImNetSmpl::load_net(const QString &name)
+void ImNetSmpl::load_net(const std::string &name)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 
 	std::fstream fs;
 	fs.open(n.toStdString(), std::ios_base::in | std::ios_base::binary);
@@ -338,7 +338,7 @@ void ImNetSmpl::load_net(const QString &name)
 		return;
 	}
 
-	m_model = n;
+    m_model = n.toStdString();
 
 //	read_vector(fs, m_cnvlayers);
 //	read_vector(fs, m_layers);
@@ -364,9 +364,9 @@ void ImNetSmpl::load_net(const QString &name)
 
 //////////////////////////
 
-void ImNetSmpl::save_net2(const QString &name)
+void ImNetSmpl::save_net2(const std::string &name)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 
 	std::fstream fs;
 	fs.open(n.toStdString(), std::ios_base::out | std::ios_base::binary);
@@ -420,9 +420,9 @@ void ImNetSmpl::save_net2(const QString &name)
 
 }
 
-void ImNetSmpl::load_net2(const QString &name)
+void ImNetSmpl::load_net2(const std::string &name)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 
 	std::fstream fs;
 	fs.open(n.toStdString(), std::ios_base::in | std::ios_base::binary);
@@ -432,7 +432,7 @@ void ImNetSmpl::load_net2(const QString &name)
 		return;
 	}
 
-	m_model = n;
+    m_model = n.toStdString();
 
 //	read_vector(fs, m_cnvlayers);
 //	read_vector(fs, m_layers);
@@ -492,9 +492,9 @@ void ImNetSmpl::load_net2(const QString &name)
 
 ////////////////////////////////
 
-void ImNetSmpl::setModelName(const QString &name)
+void ImNetSmpl::setModelName(const std::string &name)
 {
-	if(!name.isEmpty())
+    if(!name.empty())
 		m_model = name;
 }
 

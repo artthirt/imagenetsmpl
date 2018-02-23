@@ -122,7 +122,7 @@ ImReader::ImReader()
 	m_done = false;
 }
 
-ImReader::ImReader(const QString& pathToImages)
+ImReader::ImReader(const std::string &pathToImages)
 {
 	m_batch = 10;
 	m_aug = true;
@@ -175,7 +175,7 @@ void ImReader::init()
 		m_dirs.push_back(dir[i].toStdString());
 	}
 #else
-    int dir_count = number_of_files_in_directory(m_image_path.toStdString());
+    int dir_count = number_of_files_in_directory(m_image_path);
 
     if(dir_count == 0){
         qDebug() << "ERROR: dir is empty";
@@ -188,7 +188,7 @@ void ImReader::init()
 
 	using namespace std::experimental;
 
-	for(auto& it: filesystem::directory_iterator(m_image_path.toStdString())){
+    for(auto& it: filesystem::directory_iterator(m_image_path)){
 		filesystem::path fpath = it.path();
 		std::string fname = fpath.filename().string();
         if(!std::experimental::filesystem::is_directory(fpath) || fname == "." || fname == "..")
@@ -463,9 +463,9 @@ void ImReader::getMat(const ct::Matf &in, cv::Mat *out, const ct::Size sz)
 	out->convertTo(*out, CV_8UC3, 255.);
 }
 
-void ImReader::setImagePath(const QString &path)
+void ImReader::setImagePath(const std::string &path)
 {
-	m_image_path = path;
+    m_image_path = path;
 }
 
 void ImReader::setValidation(const std::string &folder/*, const std::string groundtruth_file*/)

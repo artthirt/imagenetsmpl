@@ -1,6 +1,8 @@
 QT += core
 QT -= gui
 
+DESTDIR = ../
+
 CONFIG += c++11
 
 TARGET = imagenetsmpl
@@ -13,14 +15,12 @@ SOURCES += main.cpp \
     imnetsmpl.cpp \
     imreader.cpp \
    # qt_work_mat.cpp
-    imnetsmplgpu.cpp \
     imnet_list.cpp
 
 HEADERS += \
     imnetsmpl.h \
     imreader.h \
     #qt_work_mat.h
-    imnetsmplgpu.h \
     imnet_list.h
 
 CONFIG(debug, debug|release){
@@ -53,19 +53,18 @@ win32{
     LIBS += -l:libopencv_core.so -l:libopencv_highgui.so -l:libopencv_imgproc.so -l:libopencv_imgcodecs.so -ltbb -lgomp -lstdc++fs
 }
 
-# The following define makes your compiler emit warnings if you use
-# any feature of Qt which as been marked deprecated (the exact warnings
-# depend on your compiler). Please consult the documentation of the
-# deprecated API in order to know how to port your code away from it.
-DEFINES += QT_DEPRECATED_WARNINGS
+include(../ml_algorithms/ct/ct.pri)
 
-# You can also make your code fail to compile if you use deprecated APIs.
-# In order to do so, uncomment the following line.
-# You can also select to disable deprecated APIs only up to a certain version of Qt.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+isEmpty(NOGPU){
+    message("use gpu")
 
-include(ml_algorithms/ct/ct.pri)
-include(ml_algorithms/gpu/gpu.pri)
+    SOURCES += imnetsmplgpu.cpp
+    HEADERS += imnetsmplgpu.h
+
+    include(../ml_algorithms/gpu/gpu_export.pri)
+}else{
+    message("don't use gpu")
+}
 
 UI_DIR += tmp/$$TMP/ui
 OBJECTS_DIR += tmp/$$TMP/obj

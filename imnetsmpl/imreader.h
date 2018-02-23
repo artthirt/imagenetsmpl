@@ -3,8 +3,6 @@
 
 #include "custom_types.h"
 #include <vector>
-#include <QString>
-
 #include <thread>
 #include <list>
 #include <mutex>
@@ -92,7 +90,7 @@ public:
 	};
 
 	ImReader();
-	ImReader(const QString &pathToImages);
+    ImReader(const std::string &pathToImages);
 	~ImReader();
 
 	void init();
@@ -103,7 +101,7 @@ public:
 
 	void getMat(const ct::Matf &in, cv::Mat *out, const ct::Size sz);
 
-	void setImagePath(const QString& path);
+    void setImagePath(const std::string& path);
 
     void setValidation(const std::string &folder);
 
@@ -133,7 +131,7 @@ private:
 	std::vector< std::string > m_dirs;
 	std::vector< std::vector< std::string > > m_files;
 	int m_all_count;
-	QString m_image_path;
+    std::string m_image_path;
 
 	std::vector< std::string > m_val_files;
 	std::string m_val_gt_file;

@@ -1,9 +1,12 @@
 #include <QCoreApplication>
 
 #include "imnetsmpl.h"
-#include "imnetsmplgpu.h"
 #include "imreader.h"
 #include <map>
+
+#ifdef _USE_GPU
+#include "imnetsmplgpu.h"
+#endif
 
 #include "nn.h"
 
@@ -100,6 +103,8 @@ void test()
 	std::cout << "b3\n" << b3.print() << std::endl;
 }
 
+#ifdef _USE_GPU
+
 void test2()
 {
 	int c_rows = 35;
@@ -190,6 +195,8 @@ void test3()
 	gpumat::save_gmat(gD, "C2.txt");
 }
 
+#endif
+
 int main(int argc, char *argv[])
 {
 	std::map<std::string, std::string> res = parseArgs(argc, argv);
@@ -222,7 +229,7 @@ int main(int argc, char *argv[])
 		seed = std::stoi(res["seed"]);
 	}
 
-	ImReader ir(QString(res["imnet"].c_str()));
+    ImReader ir(res["imnet"]);
 	//ImReader ir(QString("d:/Down/smpl/data/imagenet"));
 
 
@@ -279,6 +286,7 @@ int main(int argc, char *argv[])
 	ir.setSeed(seed);
 
 	if(contain(res, "gpu")){
+#ifdef _USE_GPU
 		ImNetSmplGpu imnetSmpl;
 		imnetSmpl.setReader(&ir);
 		imnetSmpl.setLearningRate(lr);
@@ -318,6 +326,7 @@ int main(int argc, char *argv[])
 		}
 
 		imnetSmpl.doPass(pass, batch);
+#endif
 	}else{
 		ImNetSmpl imnetSmpl;
 		imnetSmpl.setReader(&ir);

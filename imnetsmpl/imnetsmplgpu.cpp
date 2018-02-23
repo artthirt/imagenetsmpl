@@ -127,8 +127,8 @@ void ImNetSmplGpu::init()
     m_conv[0].init(ct::Size(W, H), 3, 1, 64, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, false, true);
     m_conv[1].init(m_conv[0].szOut(), 64, 2, 64, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[2].init(m_conv[1].szOut(), 64, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
-    m_conv[3].init(m_conv[2].szOut(), 128, 2, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
-    m_conv[4].init(m_conv[3].szOut(), 128, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
+    m_conv[3].init(m_conv[2].szOut(), 128, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
+    m_conv[4].init(m_conv[3].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
     m_conv[5].init(m_conv[4].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
 	m_conv[6].init(m_conv[5].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
     m_conv[7].init(m_conv[6].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
@@ -393,9 +393,9 @@ ct::Matf ImNetSmplGpu::predict(std::vector< gpumat::GpuMat > &gy)
 	return res;
 }
 
-ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
+ct::Matf ImNetSmplGpu::predict(const std::string &name, bool show_debug)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 //	qDebug() << n;
 
 	if(!QFile::exists(n) || !m_reader)
@@ -445,9 +445,9 @@ ct::Matf ImNetSmplGpu::predict(const QString &name, bool show_debug)
     return my;
 }
 
-void ImNetSmplGpu::predicts(const QString &sdir)
+void ImNetSmplGpu::predicts(const std::string &sdir)
 {
-	QString n = QDir::fromNativeSeparators(sdir);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(sdir));
 	std::cout << n.toLatin1().data() << std::endl;
 
 	QDir dir(n);
@@ -470,7 +470,7 @@ void ImNetSmplGpu::predicts(const QString &sdir)
 		QString s = dir.path() + "/" + dir[i];
 		QFileInfo f(s);
 		if(f.isFile()){
-			ct::Matf y = predict(s, false);
+            ct::Matf y = predict(s.toStdString(), false);
 			int cls = y.argmax(0, 1);
 			int cnt = stat[cls];
 			stat[cls] = cnt + 1;
@@ -521,14 +521,14 @@ float ImNetSmplGpu::loss(const gpumat::GpuMat &y, const std::vector< gpumat::Gpu
 	return f;
 }
 
-void ImNetSmplGpu::setSaveModelName(const QString name)
+void ImNetSmplGpu::setSaveModelName(const std::string name)
 {
 	m_save_model = name;
 }
 
-void ImNetSmplGpu::save_net(const QString &name)
+void ImNetSmplGpu::save_net(const std::string &name)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 
 	std::fstream fs;
 	fs.open(n.toStdString(), std::ios_base::out | std::ios_base::binary);
@@ -556,9 +556,9 @@ void ImNetSmplGpu::save_net(const QString &name)
 
 }
 
-void ImNetSmplGpu::load_net(const QString &name)
+void ImNetSmplGpu::load_net(const std::string &name)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 
 	std::fstream fs;
 	fs.open(n.toStdString(), std::ios_base::in | std::ios_base::binary);
@@ -568,7 +568,7 @@ void ImNetSmplGpu::load_net(const QString &name)
 		return;
 	}
 
-	m_model = n;
+    m_model = n.toStdString();
 
 //	read_vector(fs, m_cnvlayers);
 //	read_vector(fs, m_layers);
@@ -594,9 +594,9 @@ void ImNetSmplGpu::load_net(const QString &name)
 
 //////////////////////////
 
-void ImNetSmplGpu::save_net2(const QString &name)
+void ImNetSmplGpu::save_net2(const std::string &name)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 
 	std::fstream fs;
 	fs.open(n.toStdString(), std::ios_base::out | std::ios_base::binary);
@@ -650,9 +650,9 @@ void ImNetSmplGpu::save_net2(const QString &name)
 
 }
 
-void ImNetSmplGpu::load_net2(const QString &name)
+void ImNetSmplGpu::load_net2(const std::string &name)
 {
-	QString n = QDir::fromNativeSeparators(name);
+    QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 
 	std::fstream fs;
 	fs.open(n.toStdString(), std::ios_base::in | std::ios_base::binary);
@@ -662,7 +662,7 @@ void ImNetSmplGpu::load_net2(const QString &name)
 		return;
 	}
 
-	m_model = n;
+    m_model = n.toStdString();
 
 //	read_vector(fs, m_cnvlayers);
 //	read_vector(fs, m_layers);
@@ -729,9 +729,9 @@ void ImNetSmplGpu::load_net2(const QString &name)
 
 //////////////////////////
 
-void ImNetSmplGpu::setModelName(const QString &name)
+void ImNetSmplGpu::setModelName(const std::string &name)
 {
-	if(!name.isEmpty())
+    if(!name.empty())
 		m_model = name;
 }
 
