@@ -234,6 +234,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 	uint off = 0;
 
 	if(train){
+#if NUMBER_REPEAT != 0
 		if(m_saved.size() && aug){
             int cnt_batch = NUMBER_REPEAT;
             int cnt = std::min(batch, cnt);
@@ -244,6 +245,7 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 				m_saved.pop_front();
 			}
 		}
+#endif
 	}
 
 //#pragma omp parallel for
@@ -642,6 +644,7 @@ void ImReader::setSeed(int seed)
 
 void ImReader::push_to_saved(const ct::Matf &X, float id, float delta)
 {
+#if NUMBER_REPEAT != 0
     while(m_saved.size() > MAX_SAVED){
         m_saved.pop_back();
 	}
@@ -650,6 +653,7 @@ void ImReader::push_to_saved(const ct::Matf &X, float id, float delta)
     m_saved.sort([](const Saved& s1, const Saved& s2){
         return s1.delta > s2.delta;
     });
+#endif
  }
 
 ///////////////////////////////////
@@ -677,17 +681,17 @@ void Aug::gen(std::mt19937 &gn)
 {
     augmentation = true;
 
-#if 0
+#if 1
     std::uniform_real_distribution<float> distr(-1., 1.);
 #if 0
     xoff = (float)ImReader::IM_WIDTH * 0.1 * distr(gn);
     yoff = (float)ImReader::IM_HEIGHT * 0.1 * distr(gn);
 #endif
-//    contrast = 0.01 * distr(gn);
-	float rnd1 = 0.07 * distr(gn);
-	kr = 0.98 + rnd1 + 0.01 * distr(gn);
-	kg = 0.98 + rnd1 + 0.01 * distr(gn);
-	kb = 0.98 + rnd1 + 0.01 * distr(gn);
+	contrast = 0.05 * distr(gn);
+	float rnd1 = 0.05 * distr(gn);
+	kr = 1. + rnd1;
+	kg = 1. + rnd1;
+	kb = 1. + rnd1;
 #if 0
    zoomx = 1. + 0.1 * distr(gn);
    zoomy = 1. + 0.1 * distr(gn);

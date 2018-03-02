@@ -130,13 +130,13 @@ void ImNetSmplGpu::init()
     m_conv[3].init(m_conv[2].szOut(), 64, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[4].init(m_conv[3].szOut(), 128, 1, 128, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
     m_conv[5].init(m_conv[4].szOut(), 128, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
-    m_conv[6].init(m_conv[5].szOut(), 128, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
+	m_conv[6].init(m_conv[5].szOut(), 128, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[7].init(m_conv[6].szOut(), 256, 1, 256, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
     m_conv[8].init(m_conv[7].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
-    m_conv[9].init(m_conv[8].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
+	m_conv[9].init(m_conv[8].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[10].init(m_conv[9].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
     m_conv[11].init(m_conv[10].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYRELU, false, true, true);
-    m_conv[12].init(m_conv[11].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
+	m_conv[12].init(m_conv[11].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
 //    m_conv[13].init(m_conv[12].szOut(), 512, 1, 512, ct::Size(1, 1), gpumat::LEAKYLEAKYRELU, false, false, true, true);
 //    m_conv[14].init(m_conv[13].szOut(), 512, 2, 512, ct::Size(3, 3), gpumat::LEAKYLEAKYRELU, false, false, true);
 
@@ -153,6 +153,13 @@ void ImNetSmplGpu::init()
 	m_optim.init(m_mlp);
 	m_optim.setAlpha(m_learningRate);
 
+	for(gpumat::convnn_gpu& it: m_conv){
+		it.setParams(gpumat::LEAKYRELU, 0.01);
+	}
+	for(gpumat::mlp& it: m_mlp){
+		it.setParams(gpumat::LEAKYRELU, 0.01);
+	}
+
 	m_cnv_optim.init(m_conv);
 	m_cnv_optim.setAlpha(m_learningRate);
 
@@ -165,8 +172,8 @@ void ImNetSmplGpu::init()
 		m_conv[i].setDropout(0.7);
 	}
 
-    m_mlp[0].setDropout(.7);
-    m_mlp[1].setDropout(.7);
+	m_mlp[0].setDropout(.7);
+	m_mlp[1].setDropout(.7);
 	m_mlp[2].setDropout(1.);
 
 	m_init = true;
@@ -749,6 +756,7 @@ void ImNetSmplGpu::set_train(bool val)
 
 void ImNetSmplGpu::check_delta(const std::vector< gpumat::GpuMat > &g_D, const Batch &btch)
 {
+#if NUMBER_REPEAT != 0
     if(g_D.empty())
         return;
 
@@ -785,4 +793,5 @@ void ImNetSmplGpu::check_delta(const std::vector< gpumat::GpuMat > &g_D, const B
             m_reader->push_to_saved(btch.X[id], btch.y.ptr(id)[0], f);
 		}
     }
+#endif
 }
