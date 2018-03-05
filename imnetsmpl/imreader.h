@@ -86,7 +86,7 @@ class ImReader
 {
 public:
 	enum {
-		IM_WIDTH=224, IM_HEIGHT=224, TRAIN_EDGE = 1100, TRAIN_EDGE2 = 900
+        IM_WIDTH=112, IM_HEIGHT=112, TRAIN_EDGE = 1100, TRAIN_EDGE2 = 900
 	};
 
 	ImReader();
