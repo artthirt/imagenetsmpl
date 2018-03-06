@@ -79,8 +79,8 @@ private:
 	std::vector< gpumat::mlp > m_mlp;
 	int m_classes;
 	gpumat::GpuMat m_A1;
-    gpumat::MlpOptimAdam m_optim;
-    gpumat::CnvAdamOptimizer m_cnv_optim;
+    gpumat::MlpOptimMoment m_optim;
+    gpumat::CnvMomentumOptimizer m_cnv_optim;
 	std::vector< gpumat::GpuMat > m_deltas;
 
 	int m_check_count;
