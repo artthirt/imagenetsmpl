@@ -235,16 +235,19 @@ void ImReader::get_batch(std::vector<ct::Matf> &X, ct::Matf &y, int batch, bool 
 
 	if(train){
 #if NUMBER_REPEAT != 0
-		if(m_saved.size() && aug){
+        if(m_saved.size() && aug){
             int cnt_batch = NUMBER_REPEAT;
             int cnt = std::min(batch, cnt);
             if(!cnt) cnt = std::max(1, cnt_batch);
-			for(int off = 0; off < cnt && !m_saved.empty(); ++off){
-				X[off] = m_saved.front().X;
-				y.ptr(off)[0] = m_saved.front().id;
-				m_saved.pop_front();
-			}
-		}
+            int off = 0;
+            for(const Saved& it: m_saved){
+                X[off] = it.X;
+                y.ptr(off)[0] = it.id;
+                 off++;
+                if(off >= cnt)
+                    break;
+            }
+        }
 #endif
 	}
 
@@ -645,14 +648,22 @@ void ImReader::setSeed(int seed)
 void ImReader::push_to_saved(const ct::Matf &X, float id, float delta)
 {
 #if NUMBER_REPEAT != 0
-    while(m_saved.size() > MAX_SAVED){
-        m_saved.pop_back();
-	}
     m_saved.push_back(Saved(X, id, delta));
 
     m_saved.sort([](const Saved& s1, const Saved& s2){
         return s1.delta > s2.delta;
     });
+
+    for(auto it = m_saved.begin(); it != m_saved.end(); it++){
+        if(it->delta < 0.1){
+            it = m_saved.erase(it);
+        }
+    }
+
+    while(m_saved.size() > MAX_SAVED){
+        m_saved.pop_back();
+    }
+
 #endif
  }
 
