@@ -13,6 +13,8 @@
 /// maximum samples saved for use repeat
 #define MAX_SAVED			(NUMBER_REPEAT * 2)
 
+#define MAX_CLASSES         200
+
 struct Aug{
 	Aug();
 	bool augmentation;

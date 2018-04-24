@@ -207,6 +207,9 @@ void ImReader::init()
         std::cout << std::endl << std::flush;
         m_files.push_back(files);
         m_dirs.push_back(fname);
+
+        if(m_dirs.size() >= MAX_CLASSES)
+            break;
     }
 #endif
 	qDebug() << "DIRS" << m_dirs.size();
