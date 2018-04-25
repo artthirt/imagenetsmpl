@@ -20,12 +20,13 @@ public:
 	void init();
     void doPass(int passes, int batch);
 
-    void forward(const std::vector< gpumat::GpuMat >& X, std::vector<gpumat::GpuMat> **pyOut, bool dropout = false);
-    void backward(const std::vector<gpumat::GpuMat> &Delta);
-    ct::Matf predict(std::vector<gpumat::GpuMat> &y);
+	void forward(const std::vector< gpumat::GpuMat >& X, 
+					gpumat::GpuMat **pyOut, bool dropout = false);
+	void backward(const gpumat::GpuMat& Delta);
+	ct::Matf predict(gpumat::GpuMat &y);
     ct::Matf predict(const std::string& name, bool show_debug = false);
     void predicts(const  std::string& sdir);
-    float loss(const gpumat::GpuMat &y, const std::vector<gpumat::GpuMat> &y_);
+	float loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_);
 
 	/**
 	 * @brief setSaveModelName
@@ -66,7 +67,7 @@ public:
 
 	void set_train(bool val);
 
-    void check_delta(const std::vector<gpumat::GpuMat> &g_D, const Batch& btch);
+	void check_delta(const gpumat::GpuMat& g_D, const Batch& btch);
 
 private:
 	ImReader *m_reader;

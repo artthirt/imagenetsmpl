@@ -9,7 +9,7 @@
 const int cnv_size = 5;
 const int mlp_size = 3;
 const int everytimeN = 100;
-const int default_check_count = 600;
+const int default_check_count = 400;
 
 #define USE_MLP 1
 
@@ -59,25 +59,25 @@ std::vector< SortC > sort_column(const ct::Matf& mat, int row)
 	return res;
 }
 
-double check2(const std::vector< gpumat::GpuMat >& prob, const ct::Matf& classes)
+double check2(const gpumat::GpuMat& prob, const ct::Matf& classes)
 {
-    if(classes.empty() || classes.rows != (int)prob.size() || classes.cols != 1)
+	if(classes.empty() || classes.rows != prob.rows || classes.cols != 1)
 		return -1.;
 
-    std::vector< ct::Matf> mp;
-    gpumat::cnv2mat(prob, mp);
+	ct::Matf mp;
+	gpumat::convert_to_mat(prob, mp);
 
 	int idx = 0;
 	for(int i = 0; i < classes.rows; ++i){
 		std::vector< SortC > preds;
-        preds = sort_column(mp[i], 0);
+		preds = sort_column(mp, i);
 		for(const SortC& s: preds){
 			if(s.p > 0.1 && s.index == classes.ptr(i)[0]){
 				idx++;
 				break;
 			}
-            if(idx >= 5)
-                break;
+			if(idx >= 5)
+				break;
 		}
 	}
 	double pred = (double)idx / classes.rows;
@@ -126,11 +126,11 @@ void ImNetSmplGpu::init()
 
 	m_conv.resize(cnv_size);
 
-    m_conv[0].init(ct::Size(W, H), 3, 2, 64, ct::Size(5, 5), gpumat::LEAKYRELU, false, true, false, true);
-    m_conv[1].init(m_conv[0].szOut(), 64, 1, 128, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
-    m_conv[2].init(m_conv[1].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
-    m_conv[3].init(m_conv[2].szOut(), 256, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
-    m_conv[4].init(m_conv[3].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true, true, true, true);
+    m_conv[0].init(ct::Size(W, H), 3, 2, 64, ct::Size(5, 5), gpumat::LEAKYRELU, false, false, false, true);
+    m_conv[1].init(m_conv[0].szOut(), 64, 2, 128, ct::Size(3, 3), gpumat::LEAKYRELU, false, false, true, true);
+    m_conv[2].init(m_conv[1].szOut(), 128, 2, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, false, true, true);
+    m_conv[3].init(m_conv[2].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, false, true, true);
+    m_conv[4].init(m_conv[3].szOut(), 512, 1, 512, ct::Size(3, 3), gpumat::LEAKYRELU, true, false, true, true);
 //    m_conv[5].init(m_conv[4].szOut(), 128, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
 //    m_conv[6].init(m_conv[5].szOut(), 256, 1, 256, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
 //    m_conv[7].init(m_conv[6].szOut(), 256, 2, 512, ct::Size(3, 3), gpumat::LEAKYRELU, false, true, true, true);
@@ -167,8 +167,8 @@ void ImNetSmplGpu::init()
 		m_conv[i].setDropout(0.7);
 	}
 
-    m_mlp[0].setDropout(.97);
-    m_mlp[1].setDropout(.97);
+    m_mlp[0].setDropout(.7);
+    m_mlp[1].setDropout(.7);
 	m_mlp[2].setDropout(1.);
 
 	m_init = true;
@@ -191,8 +191,8 @@ void ImNetSmplGpu::doPass(int passes, int batch)
 	if(!m_init)
 		init();
 
-    std::vector< gpumat::GpuMat > gX, *gy_, gD;
-    gpumat::GpuMat gy;
+	std::vector< gpumat::GpuMat > gX;
+	gpumat::GpuMat gy, *gy_, gD;
 
 	m_reader->set_params_batch(batch, true);
 	m_reader->start();
@@ -234,7 +234,7 @@ void ImNetSmplGpu::doPass(int passes, int batch)
 //		printf("--> backward\r");
 		backward(gD);
 
-        if((pass % everytimeN) == 0/* && i > 0*/ || pass == 30){
+        if((pass % everytimeN) == 0 && pass > 0 || pass == 30){
 			std::vector< ct::Matf > X;
 			ct::Matf y, p;
 
@@ -277,7 +277,8 @@ void ImNetSmplGpu::doPass(int passes, int batch)
 	}
 }
 
-void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, std::vector< gpumat::GpuMat > **pyOut, bool dropout)
+void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, 
+							gpumat::GpuMat **pyOut, bool dropout)
 {
 //	for(int i = 0; i < m_conv.size(); ++i){
 //		m_conv[i].setDropout(dropout);
@@ -291,77 +292,53 @@ void ImNetSmplGpu::forward(const std::vector<gpumat::GpuMat> &X, std::vector< gp
 	m_mlp[1].setDropout(dropout);
 	//m_mlp[2].setDropout(dropout);
 
-	m_conv[0].forward(&X);
-	for(size_t i = 1; i < m_conv.size(); ++i){
-		m_conv[i].forward(&m_conv[i - 1].XOut());
+    m_conv[0].forward(&X);
+    for(size_t i = 1; i < m_conv.size(); ++i){
+        m_conv[i].forward(&m_conv[i - 1].XOut());
+    }
+    gpumat::vec2mat(m_conv.back().XOut(), m_A1);
+
+	gpumat::GpuMat *pX = &m_A1;
+	for(size_t i = 0; i < m_mlp.size(); ++i){
+		gpumat::mlp& mlp = m_mlp[i];
+		mlp.forward(pX);
+		pX = &mlp.A1;
+//		m_mlp[0].forward(&m_A1);
+//		m_mlp[1].forward(&m_mlp[0].A1);
+//		m_mlp[2].forward(&m_mlp[1].A1, gpumat::SOFTMAX);
 	}
 
-//	gpumat::vec2mat(m_conv.back().XOut(), m_A1);
-
-//	gpumat::GpuMat *pX = &m_A1;
-//	for(size_t i = 0; i < m_mlp.size(); ++i){
-//		gpumat::mlp& mlp = m_mlp[i];
-//		mlp.forward(pX);
-//		pX = &mlp.A1;
-////		m_mlp[0].forward(&m_A1);
-////		m_mlp[1].forward(&m_mlp[0].A1);
-////		m_mlp[2].forward(&m_mlp[1].A1, gpumat::SOFTMAX);
-//	}
-    std::vector< gpumat::GpuMat > *pYm = &m_conv.back().XOut();
-
-    /// reshape cnv
-    for(gpumat::GpuMat& xout: m_conv.back().XOut()){
-        xout.reshape(1, m_conv.back().outputFeatures());
-    }
-
-    for(size_t i = 0; i < m_mlp.size(); ++i){
-        m_mlp[i].forward(pYm);
-        pYm = &m_mlp[i].vecA1;
-    }
-
-    *pyOut = &m_mlp.back().vecA1;
+	*pyOut = &m_mlp.back().A1;
 
 #ifdef DEBUG_MODE
     throw new std::string("gpu");
 #endif
 }
 
-void ImNetSmplGpu::backward(const std::vector< gpumat::GpuMat > &Delta)
+void ImNetSmplGpu::backward(const gpumat::GpuMat &Delta)
 {
-    if(m_mlp.empty() || m_mlp.back().vecA1.empty())
+    if(m_mlp.empty() || m_mlp.back().A1.empty())
 		return;
 
-    std::vector< gpumat::GpuMat > *pX = (std::vector< gpumat::GpuMat >*)&Delta;
-
-    for(int i = m_mlp.size() - 1; i >= 0; i--){
+	gpumat::GpuMat *pX = (gpumat::GpuMat*)&Delta;
+	for(int i = m_mlp.size() - 1; i >= 0; i--){
 		gpumat::mlp& mlp = m_mlp[i];
 		mlp.backward(*pX);
-        pX = &mlp.vecDltA0;
+		pX = &mlp.DltA0;
 //	m_mlp.back().backward(Delta);
 //	m_mlp[1].backward(m_mlp[2].DltA0);
 //	m_mlp[0].backward(m_mlp[1].DltA0);
 	}
 
 	if(m_useBackConv){
-        //gpumat::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, m_deltas);
-        std::vector< gpumat::GpuMat > *pD = &m_mlp[0].vecDltA0;
+		gpumat::mat2vec(m_mlp[0].DltA0, m_conv.back().szK, m_deltas);
 
 	//	printf("-cnv4        \r");
 		//m_conv.back().backward(m_deltas);
 
-        //std::vector< gpumat::GpuMat > *pD = &m_deltas;
-        int K = m_conv.back().szOut().width;
+		std::vector< gpumat::GpuMat > *pD = &m_deltas;
 
-        for(size_t i = 0; i < pD->size(); ++i){
-            (*pD)[i].reshape((K * K), m_conv.back().kernels);
-        }
-
-        /// reshape cnv
-        for(gpumat::GpuMat& xout: m_conv.back().XOut()){
-            xout.reshape((K * K), m_conv.back().kernels);
-        }
-
-        for(int i = m_conv.size() - 1; i >= m_layer_from; i--){
+		for(int i = m_conv.size() - 1; i >= m_layer_from; i--){
 		//	printf("-cnv3        \r");
 			m_conv[i].backward(*pD, i == m_layer_from);
 			pD = &m_conv[i].Dlt;
@@ -378,19 +355,17 @@ void ImNetSmplGpu::backward(const std::vector< gpumat::GpuMat > &Delta)
 	m_optim.pass(m_mlp);
 }
 
-ct::Matf ImNetSmplGpu::predict(std::vector< gpumat::GpuMat > &gy)
+ct::Matf ImNetSmplGpu::predict(gpumat::GpuMat &gy)
 {
-    std::vector< ct::Matf > y;
-    ct::Matf res;
-//	gpumat::convert_to_mat(gy, y);
-    gpumat::cnv2mat(gy, y);
+	ct::Matf res, y;
+	gpumat::convert_to_mat(gy, y);
 
 //	gpumat::save_gmat(gy, "tmp.txt");
 
-    res.setSize(y.size(), 1);
+	res.setSize(y.rows, 1);
 
-    for(int i = 0; i < (int)y.size(); ++i){
-        res.ptr()[i] = y[i].argmax(0, 1);
+	for(int i = 0; i < y.rows; ++i){
+		res.ptr()[i] = y.argmax(i, 1);
 	}
 	return res;
 }
@@ -400,41 +375,34 @@ ct::Matf ImNetSmplGpu::predict(const std::string &name, bool show_debug)
     QString n = QDir::fromNativeSeparators(QString::fromStdString(name));
 //	qDebug() << n;
 
-	if(!QFile::exists(n) || !m_reader)
+ 	if(!QFile::exists(n) || !m_reader)
 		return ct::Matf();
 
-    ct::Matf Xi = m_reader->get_image(n.toStdString()), my;
-    std::vector< ct::Matf> X, y;
+	ct::Matf Xi = m_reader->get_image(n.toStdString()), y;
+	std::vector< ct::Matf> X;
 	X.push_back(Xi);
 
-    std::vector< gpumat::GpuMat > gX, *gy_;
+	std::vector< gpumat::GpuMat > gX;
+	gpumat::GpuMat gy, *gy_, gD;
 
 	get_gX(X, gX);
 
 	forward(gX, &gy_);
-    gpumat::cnv2mat(*gy_, y);
-
-    my.setSize(y.size(), y[0].total());
-
-    for(int i = 0; i < (int)y.size(); ++i){
-        for(int j = 0; j < my.cols; ++j){
-            my.ptr(i)[j] = y[i].ptr()[j];
-        }
-    }
+	gpumat::convert_to_mat(*gy_, y);
 
 	if(show_debug){
 		std::vector< int > numbers;
 		std::vector< float > prob;
-        for(int i = 0; i < my.cols; ++i){
-            if(my.ptr()[i] < 0.1)
-                my.ptr()[i] = 0;
+		for(int i = 0; i < y.cols; ++i){
+			if(y.ptr()[i] < 0.1)
+				y.ptr()[i] = 0;
 			else{
 				numbers.push_back(i);
-                prob.push_back(my.ptr()[i]);
+				prob.push_back(y.ptr()[i]);
 			}
 		}
 
-        int cls = my.argmax(0, 1);
+		int cls = y.argmax(0, 1);
 		printf("--> predicted class %d\n", cls);
 
 		printf("probs:\n");
@@ -444,7 +412,7 @@ ct::Matf ImNetSmplGpu::predict(const std::string &name, bool show_debug)
 		std::cout << std::endl;
 	}
 
-    return my;
+	return y;
 }
 
 void ImNetSmplGpu::predicts(const std::string &sdir)
@@ -497,31 +465,20 @@ void ImNetSmplGpu::predicts(const std::string &sdir)
 }
 
 
-float ImNetSmplGpu::loss(const gpumat::GpuMat &y, const std::vector< gpumat::GpuMat > &y_)
+float ImNetSmplGpu::loss(const gpumat::GpuMat &y, const gpumat::GpuMat &y_)
 {
-    std::vector< gpumat::GpuMat > gr;
+	gpumat::GpuMat gr;
 	gpumat::subIndOne(y_, y, gr);
-//	gpumat::elemwiseSqr(gr, gr);
-    std::vector< ct::Matf > R;
+	gpumat::elemwiseSqr(gr, gr);
 	ct::Matf r;
 
-    gpumat::cnv2mat(gr, R);
-
-    for(ct::Matf& m: R){
-        ct::elemwiseMult(m, m);
-    }
-
-    r.setSize(R.size(), 1);
-    for(int i = 0; i < (int)R.size(); ++i){
-        r.ptr(i)[0] = R[i].sum();
-    }
-
-    //gpumat::convert_to_mat(gr, r);
+	gpumat::convert_to_mat(gr, r);
 
 	float f = r.sum() / r.rows;
 
 	return f;
 }
+
 
 void ImNetSmplGpu::setSaveModelName(const std::string name)
 {
@@ -749,28 +706,17 @@ void ImNetSmplGpu::set_train(bool val)
 	}
 }
 
-void ImNetSmplGpu::check_delta(const std::vector< gpumat::GpuMat > &g_D, const Batch &btch)
+void ImNetSmplGpu::check_delta(const gpumat::GpuMat &g_D, const Batch &btch)
 {
-#if NUMBER_REPEAT != 0
-    if(g_D.empty())
-        return;
-
-    std::vector < ct::Matf > D;
-    gpumat::cnv2mat(g_D, D);
+	gpumat::GpuMat g_Out, g_R;
+	gpumat::elemwiseSqr(g_D, g_Out);
+	gpumat::sumCols(g_Out, g_R, 1);
 	ct::Matf d;
-
-    for(ct::Matf& m: D){
-        ct::elemwiseMult(m, m);
-    }
-
-    d.setSize(D.size(), 1);
-
-    for(int i = 0; i < (int)D.size(); ++i){
-        d.ptr()[i] = D[i].sum();
-    }
 
 //	gpumat::save_gmat(g_Out, "out.txt");
 //	gpumat::save_gmat(g_R, "out1.txt");
+
+	gpumat::convert_to_mat(g_R, d);
 
 	std::vector< float > df;
 	std::vector< size_t > idx;
@@ -782,11 +728,10 @@ void ImNetSmplGpu::check_delta(const std::vector< gpumat::GpuMat > &g_D, const B
 	idx = sort_indexes(df, 1);
 
     for(size_t i = 0; i < std::min((size_t)MAX_SAVED, idx.size()); ++i){
-		int id = idx[i];
-		float f = df[id];
+        int id = idx[i];
+        float f = df[id];
         if(f > 0.5){
             m_reader->push_to_saved(btch.X[id], btch.y.ptr(id)[0], f);
-		}
+        }
     }
-#endif
 }
