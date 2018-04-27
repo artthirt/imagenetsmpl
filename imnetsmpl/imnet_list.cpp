@@ -1028,7 +1028,7 @@ int getNumberOfList(const std::string &name)
 		}
 	}
 
-	return -1;
+    throw new std::string("not found");
 }
 
 }
